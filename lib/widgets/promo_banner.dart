@@ -1,21 +1,5 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:async';
-
-Future<void> debugNetworkRequest(String url) async {
-  try {
-    final response = await http.get(Uri.parse(url));
-    print('Debug: Network request for $url');
-    print('Status code: ${response.statusCode}');
-    print('Headers: ${response.headers}');
-    print(
-        'Body starts with: ${response.body.substring(0, min(100, response.body.length))}');
-  } catch (e) {
-    print('Error during network request: $e');
-  }
-}
 
 class PromoBanner extends StatefulWidget {
   final List<Map<String, String>> bannerData;
@@ -104,7 +88,6 @@ class _PromoBannerState extends State<PromoBanner> {
   }
 
   Widget _buildBannerItem(Map<String, String> data) {
-    debugNetworkRequest(data['imageUrl']!);
     return Container(
       child: Stack(
         fit: StackFit.expand,

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../widgets/promo_banner.dart';
 
 class HomeScreen extends StatelessWidget {
-  final url =
-      'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942';
   final List<Map<String, String>> promoData = [
     {
       'imageUrl':
@@ -28,22 +26,36 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('로고'),
+        title: Text('리승모'),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             PromoBanner(bannerData: promoData),
-            SectionTitle('Trending subjects'),
+            SectionTitle('풀던 문제 바로가기'),
             HorizontalSubjectList(
               subjects: [
-                SubjectData('Algebra', '1200+ problems', url),
-                SubjectData('Calculus', '2200+ problems', url),
-                SubjectData('Geometry', '1000+ problems', url),
+                SubjectData('4번', '추리논증 단순주장+논쟁형 기타',
+                    'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%8B%A8%EC%88%9C%EC%A3%BC%EC%9E%A5.png?alt=media&token=5662465b-8be8-44a9-bb5e-fbf5a5aee41b'),
+                SubjectData('3번', '추리논증 단순주장+논쟁형 기타',
+                    'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%8B%A8%EC%88%9C%EC%A3%BC%EC%9E%A5.png?alt=media&token=5662465b-8be8-44a9-bb5e-fbf5a5aee41b'),
+                SubjectData('2번', '추리논증 단순주장+논쟁형 기타',
+                    'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%8B%A8%EC%88%9C%EC%A3%BC%EC%9E%A5.png?alt=media&token=5662465b-8be8-44a9-bb5e-fbf5a5aee41b'),
               ],
             ),
-            SectionTitle('New arrivals'),
+            SectionTitle('오늘의 무료 문제'),
+            HorizontalSubjectList(
+              subjects: [
+                SubjectData('추리논증', '다이어그램형',
+                    'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%8B%A4%EC%9D%B4%EC%96%B4%EA%B7%B8%EB%9E%A8%ED%98%95.png?alt=media&token=2e1290bf-f6c9-403c-bb70-ac270718e6e0'),
+                SubjectData('추리논증', '논쟁형',
+                    'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%85%BC%EC%9F%81%ED%98%95.png?alt=media&token=e88eb6a5-d88b-46d9-93a5-21feb5fcc124'),
+                SubjectData('언어이해', '자료분석형',
+                    'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EC%B0%A8%ED%8A%B8%ED%98%95.png?alt=media&token=dcb2f00f-c669-4f4d-8e1b-e2d2dea860b4'),
+              ],
+            ),
+            SectionTitle('인기 문제꾸러미'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -52,13 +64,13 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                           child: SubjectCard(
-                              subject: SubjectData(
-                                  'Physics', '1800+ problems', url))),
+                              subject: SubjectData('추리논증 결과분석형', '자연과학 문제꾸러미',
+                                  'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942'))),
                       SizedBox(width: 16),
                       Expanded(
                           child: SubjectCard(
-                              subject: SubjectData(
-                                  'Chemistry', '2000+ problems', url))),
+                              subject: SubjectData('추리논증 규정해석형', '특이유형 문제꾸러미',
+                                  'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%AC%B8%EC%A0%9C1.png?alt=media&token=fa06bb0d-4b2e-44be-a27f-a061e13c475d'))),
                     ],
                   ),
                   SizedBox(height: 16),
@@ -66,15 +78,15 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                           child: SubjectCard(
-                              subject:
-                                  SubjectData('Biology', '2100+ problems', url),
-                              isSmall: true)),
+                        subject: SubjectData('추리논증 퀴즈형', '논리퀴즈 복합형',
+                            'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%AC%B8%EC%A0%9C2.png?alt=media&token=ad8f8f39-d3df-4193-912d-b6a1e646e431'),
+                      )),
                       SizedBox(width: 16),
                       Expanded(
                           child: SubjectCard(
-                              subject:
-                                  SubjectData('History', '1500+ problems', url),
-                              isSmall: true)),
+                        subject: SubjectData('추리논증 단순주장+논쟁형', '순수학문 문제꾸러미',
+                            'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%AC%B8%EC%A0%9C3.png?alt=media&token=ad1f8072-9b30-435d-9a7c-c977f184ac3a'),
+                      )),
                     ],
                   ),
                 ],
@@ -173,18 +185,31 @@ class HorizontalSubjectList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 220,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: subjects.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.only(left: index == 0 ? 16 : 0, right: 16),
-            child: SubjectCard(subject: subjects[index]),
-          );
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: subjects.asMap().entries.map((entry) {
+                int index = entry.key;
+                SubjectData subject = entry.value;
+                return Padding(
+                  padding: EdgeInsets.only(
+                    left: index == 0 ? 16 : 0,
+                    right: 16,
+                  ),
+                  child: SizedBox(
+                    width: 160,
+                    child: SubjectCard(subject: subject),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -199,16 +224,14 @@ class SubjectData {
 
 class SubjectCard extends StatelessWidget {
   final SubjectData subject;
-  final bool isSmall;
 
-  const SubjectCard({Key? key, required this.subject, this.isSmall = false})
-      : super(key: key);
+  const SubjectCard({Key? key, required this.subject}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Container(
-        width: isSmall ? null : 160,
+        width: 150,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -216,12 +239,12 @@ class SubjectCard extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
                 subject.imageUrl,
-                height: isSmall ? 80 : 120,
+                height: 120,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
-            Padding(
+            Container(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,11 +252,15 @@ class SubjectCard extends StatelessWidget {
                   Text(
                     subject.title,
                     style: Theme.of(context).textTheme.titleMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 0),
                   Text(
                     subject.description,
                     style: Theme.of(context).textTheme.bodyMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
