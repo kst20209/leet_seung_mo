@@ -1,0 +1,105 @@
+# Flutter/Dart/Pub related
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+# Uncomment this line if you are using IntelliJ:
+# .idea/
+# Image related artifacts
+**/*.iml
+**/*.ipr
+**/*.iws
+# Generic flutter settings
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+# Obfuscation related
+.dart_tool/
+flutter_export_environment.sh
+# iOS related
+/ios
+ios/Pods
+ios/.symlinks
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+ios/Runner.xcworkspace
+ios/Runner.xcworkspace/contents.xcworkspacedata
+ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+ios/Runner/GeneratedPluginRegistrant.*
+# Xcode
+*.mode1v3
+*.mode2v3
+*.mode*
+*.pbxuser
+!default.pbxuser
+*.xcuserstate
+# CocoaPods
+ios/Pods/
+# Android related
+android/
+*.apk
+*.ap_
+*.aab
+*.keystore
+*.jks
+# Java related
+*.jar
+*.war
+*.ear
+# Gradle related
+.gradle/
+build/
+# Ktor related
+build/
+# Intellij related
+*.iml
+.idea/
+.idea/*
+# Code generation related
+*.g.dart
+# Misc
+*.class
+*.log
+*.lock
+*.pyc
+*.swp
+*~.nib
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+__MACOSX
+*.mp4
+*.avi
+*.psd
+*.tga
+*.kra
+*.xcf
+# Web related
+/web
+lib/generated_plugin_registrant.dart
+lib/web_plugin_registrant.dart
+web/.dart_tool/
+web/flutter_service_worker.js
+web/index.html
+web/manifest.json
+web/.packages
+web/generated_plugin_registrant.dart
+# macOS related
+macos/
+# linux related
+linux/
+# windows related
+windows/
+# Firebase related
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+# VSCode related
+.vscode/
+*.code-workspace
