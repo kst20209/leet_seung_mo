@@ -19,10 +19,7 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
     _fetchProblems();
   }
 
-  // Firestore에서 데이터를 가져오는 것을 시뮬레이션하는 메서드
   void _fetchProblems() {
-    // 실제로는 여기서 Firestore 쿼리를 수행합니다.
-    // 지금은 더미 데이터로 시뮬레이션합니다.
     setState(() {
       _problems = [
         {
@@ -32,9 +29,6 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
           'price': 500,
           'imageUrl':
               'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
-          'totalProblems': 50,
-          'description':
-              '이 문제 꾸러미는 자연과학 분야의 복합적인 문제들로 구성되어 있습니다. 물리, 화학, 생물학 등 다양한 주제를 다루며, 실제 시험에서 나올 수 있는 난이도의 문제들을 포함하고 있습니다.',
         },
         {
           'id': '2',
@@ -43,10 +37,7 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
           'price': 500,
           'imageUrl':
               'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
-          'totalProblems': 50,
-          'description': '이 문제 꾸러미는 사회과학 분야의 복합적인 문제들로 구성되어 있습니다.',
         },
-        // 추가 문제 데이터...
       ];
     });
   }
@@ -56,6 +47,7 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('문제 상점'),
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -85,31 +77,60 @@ class FilterSection extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onExpandToggle;
 
-  const FilterSection(
-      {super.key, required this.isExpanded, required this.onExpandToggle});
+  const FilterSection({
+    Key? key,
+    required this.isExpanded,
+    required this.onExpandToggle,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('필터',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            IconButton(
-              icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
-              onPressed: onExpandToggle,
+    return Card(
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '필터',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                IconButton(
+                  icon:
+                      Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+                  onPressed: onExpandToggle,
+                ),
+              ],
+            ),
+          ),
+          if (isExpanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FilterGroup(title: '과목', filters: ['추리논증', '언어이해']),
+                  const SizedBox(height: 16),
+                  FilterGroup(
+                    title: '유형',
+                    filters: ['추론형', '결과분석형', '귀결적', '단순추정형', '다이어그램형'],
+                  ),
+                  const SizedBox(height: 16),
+                  FilterGroup(title: '주제', filters: ['법학', '사회과학', '경제학']),
+                ],
+              ),
             ),
           ],
-        ),
-        if (isExpanded) ...[
-          const FilterGroup(title: '과목', filters: ['추리논증', '언어이해']),
-          const FilterGroup(
-              title: '유형', filters: ['추론형', '결과분석형', '귀결적', '단순추정형', '다이어그램형']),
-          const FilterGroup(title: '주제', filters: ['법학', '사회과학', '경제학']),
         ],
-      ],
+      ),
     );
   }
 }
@@ -118,21 +139,29 @@ class FilterGroup extends StatelessWidget {
   final String title;
   final List<String> filters;
 
-  const FilterGroup({super.key, required this.title, required this.filters});
+  const FilterGroup({Key? key, required this.title, required this.filters})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
+          runSpacing: 8,
           children: filters
               .map((filter) => TagChip(
                     label: filter,
                     onTap: () {
-                      // 필터 선택 로직 구현
+                      // TODO: 필터 선택 로직 구현
                     },
                   ))
               .toList(),
