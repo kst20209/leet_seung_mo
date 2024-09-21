@@ -1,5 +1,21 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'dart:async';
+
+Future<void> debugNetworkRequest(String url) async {
+  try {
+    final response = await http.get(Uri.parse(url));
+    print('Debug: Network request for $url');
+    print('Status code: ${response.statusCode}');
+    print('Headers: ${response.headers}');
+    print(
+        'Body starts with: ${response.body.substring(0, min(100, response.body.length))}');
+  } catch (e) {
+    print('Error during network request: $e');
+  }
+}
 
 class PromoBanner extends StatefulWidget {
   final List<Map<String, String>> bannerData;
@@ -88,45 +104,57 @@ class _PromoBannerState extends State<PromoBanner> {
   }
 
   Widget _buildBannerItem(Map<String, String> data) {
+    debugNetworkRequest(data['imageUrl']!);
     return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: NetworkImage(data['imageUrl']!),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            Uri.encodeFull(data['imageUrl']!),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              print('Error loading image: $error');
+              return Container(
+                color: Colors.grey,
+                child: Icon(Icons.error),
+              );
+            },
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                data['title']!,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium
-                    ?.copyWith(color: Colors.white),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
               ),
-              SizedBox(height: 8),
-              Text(
-                data['subtitle']!,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: Colors.white),
-              ),
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data['title']!,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium
+                      ?.copyWith(color: Colors.white),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  data['subtitle']!,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

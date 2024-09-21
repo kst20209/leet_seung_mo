@@ -58,7 +58,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                 children: [
                   Image.network(
                     problemData['imageUrl'] ??
-                        'https://via.placeholder.com/400x600?text=Problem+Image',
+                        'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
                     fit: BoxFit.contain,
                   ),
                   CustomPaint(

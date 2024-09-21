@@ -30,7 +30,8 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
           'title': '자연과학 복합형 꾸러미 1',
           'tags': ['복합형', '자연과학'],
           'price': 500,
-          'imageUrl': 'https://via.placeholder.com/150',
+          'imageUrl':
+              'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
           'totalProblems': 50,
           'description':
               '이 문제 꾸러미는 자연과학 분야의 복합적인 문제들로 구성되어 있습니다. 물리, 화학, 생물학 등 다양한 주제를 다루며, 실제 시험에서 나올 수 있는 난이도의 문제들을 포함하고 있습니다.',
@@ -40,7 +41,8 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
           'title': '사회과학 추론형 꾸러미 1',
           'tags': ['추론형', '사회과학'],
           'price': 500,
-          'imageUrl': 'https://via.placeholder.com/150',
+          'imageUrl':
+              'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
           'totalProblems': 50,
           'description': '이 문제 꾸러미는 사회과학 분야의 복합적인 문제들로 구성되어 있습니다.',
         },

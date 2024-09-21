@@ -2,22 +2,25 @@ import 'package:flutter/material.dart';
 import '../widgets/promo_banner.dart';
 
 class HomeScreen extends StatelessWidget {
+  final url =
+      'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942';
   final List<Map<String, String>> promoData = [
     {
-      'imageUrl': '/api/placeholder/400/300',
+      'imageUrl':
+          'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
       'title': 'Get a head start in 2023',
       'subtitle': 'Use code NEW YEAR for 10% off',
     },
-    {
-      'imageUrl': '/api/placeholder/400/300',
-      'title': 'Summer Learning Challenge',
-      'subtitle': 'Join now and win exciting prizes',
-    },
-    {
-      'imageUrl': '/api/placeholder/400/300',
-      'title': 'New Course: Machine Learning',
-      'subtitle': 'Master AI and ML concepts',
-    },
+    // {
+    //   'imageUrl': '/api/placeholder/400/300',
+    //   'title': 'Summer Learning Challenge',
+    //   'subtitle': 'Join now and win exciting prizes',
+    // },
+    // {
+    //   'imageUrl': '/api/placeholder/400/300',
+    //   'title': 'New Course: Machine Learning',
+    //   'subtitle': 'Master AI and ML concepts',
+    // },
     // Add more items as needed
   ];
 
@@ -35,12 +38,9 @@ class HomeScreen extends StatelessWidget {
             SectionTitle('Trending subjects'),
             HorizontalSubjectList(
               subjects: [
-                SubjectData(
-                    'Algebra', '1200+ problems', '/api/placeholder/200/150'),
-                SubjectData(
-                    'Calculus', '2200+ problems', '/api/placeholder/200/150'),
-                SubjectData(
-                    'Geometry', '1000+ problems', '/api/placeholder/200/150'),
+                SubjectData('Algebra', '1200+ problems', url),
+                SubjectData('Calculus', '2200+ problems', url),
+                SubjectData('Geometry', '1000+ problems', url),
               ],
             ),
             SectionTitle('New arrivals'),
@@ -52,15 +52,13 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                           child: SubjectCard(
-                              subject: SubjectData('Physics', '1800+ problems',
-                                  '/api/placeholder/150/150'))),
+                              subject: SubjectData(
+                                  'Physics', '1800+ problems', url))),
                       SizedBox(width: 16),
                       Expanded(
                           child: SubjectCard(
                               subject: SubjectData(
-                                  'Chemistry',
-                                  '2000+ problems',
-                                  '/api/placeholder/150/150'))),
+                                  'Chemistry', '2000+ problems', url))),
                     ],
                   ),
                   SizedBox(height: 16),
@@ -68,14 +66,14 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                           child: SubjectCard(
-                              subject: SubjectData('Biology', '2100+ problems',
-                                  '/api/placeholder/150/150'),
+                              subject:
+                                  SubjectData('Biology', '2100+ problems', url),
                               isSmall: true)),
                       SizedBox(width: 16),
                       Expanded(
                           child: SubjectCard(
-                              subject: SubjectData('History', '1500+ problems',
-                                  '/api/placeholder/150/150'),
+                              subject:
+                                  SubjectData('History', '1500+ problems', url),
                               isSmall: true)),
                     ],
                   ),
