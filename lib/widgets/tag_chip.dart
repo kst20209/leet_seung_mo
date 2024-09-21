@@ -11,7 +11,7 @@ class TagChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(20),

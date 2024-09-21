@@ -121,10 +121,22 @@ class FilterSection extends StatelessWidget {
                   const SizedBox(height: 16),
                   FilterGroup(
                     title: '유형',
-                    filters: ['추론형', '결과분석형', '귀결적', '단순추정형', '다이어그램형'],
+                    filters: [
+                      '단순주장형',
+                      '논쟁형',
+                      '결과분석형',
+                      '규정해석형',
+                      '지문분석형',
+                      '사례분석형',
+                      '규정적용형',
+                      '다이어그램형',
+                      '퀴즈형'
+                    ],
                   ),
                   const SizedBox(height: 16),
-                  FilterGroup(title: '주제', filters: ['법학', '사회과학', '경제학']),
+                  FilterGroup(
+                      title: '주제',
+                      filters: ['법학', '순수학문', '사회학문', '자연과학', '기타학문']),
                 ],
               ),
             ),
