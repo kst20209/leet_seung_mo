@@ -37,7 +37,8 @@ Map<String, List<String>> subjectToProblemIds = {
 Map<String, ProblemData> allProblems = {
   'problem1': ProblemData(
     id: 'problem1',
-    problemImage: "problem_image_url_1",
+    problemImage:
+        "https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03",
     title: "추리논증 단순주장+논쟁형 기타",
     description: "Medium",
     imageUrl:
@@ -47,7 +48,8 @@ Map<String, ProblemData> allProblems = {
   ),
   'problem2': ProblemData(
     id: 'problem2',
-    problemImage: "problem_image_url_2",
+    problemImage:
+        "https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03",
     title: "Linked List Cycle",
     description: "Easy",
     imageUrl:

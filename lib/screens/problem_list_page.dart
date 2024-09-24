@@ -57,11 +57,15 @@ class GenericListItem extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: InkWell(
         onTap: () {
-          // Navigate to problem solving page or subject detail page
           if (isProblem) {
-            Navigator.pushNamed(context, '/problem_solving', arguments: item);
+            Navigator.pushNamed(
+              context,
+              '/problem_solving',
+              arguments: item as ProblemData,
+            );
           } else {
             // Navigate to problem list for this subject
+            // This part remains unchanged
           }
         },
         child: Padding(

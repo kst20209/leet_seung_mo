@@ -6,6 +6,7 @@ import 'screens/problem_shop_page.dart';
 import 'screens/my_problem_page.dart' as my_problem;
 import 'screens/subject_list_page.dart';
 import 'screens/problem_list_page.dart';
+import 'screens/problem_data.dart';
 
 void main() {
   runApp(const MyApp());
@@ -91,10 +92,20 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const MainScreen(),
-        '/problem_solving': (context) => problem_solving.ProblemSolvingPage(),
         '/subject_list': (context) => const SubjectListPage(),
         '/problem_list': (context) =>
             const ProblemListPage(title: '', items: []),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/problem_solving') {
+          final args = settings.arguments as ProblemData;
+          return MaterialPageRoute(
+            builder: (context) {
+              return problem_solving.ProblemSolvingPage(problemData: args);
+            },
+          );
+        }
+        return null;
       },
     );
   }

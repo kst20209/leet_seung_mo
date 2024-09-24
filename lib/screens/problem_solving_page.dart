@@ -1,6 +1,12 @@
+export 'problem_solving_page.dart';
 import 'package:flutter/material.dart';
+import './problem_data.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
+  final ProblemData problemData;
+
+  ProblemSolvingPage({Key? key, required this.problemData}) : super(key: key);
+
   @override
   _ProblemSolvingPageState createState() => _ProblemSolvingPageState();
 }
@@ -10,13 +16,12 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   Color selectedColor = Colors.black;
   double strokeWidth = 2.0;
   bool isEraserMode = false;
-  late Map<String, dynamic> problemData;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(problemData['title'] ?? '문제 풀이'),
+        title: Text(widget.problemData.title),
         actions: [
           TextButton(
             child: Text(
@@ -50,9 +55,10 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
               child: Stack(
                 children: [
                   Image.network(
-                    problemData['imageUrl'] ??
-                        'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
+                    widget.problemData.problemImage,
                     fit: BoxFit.contain,
+                    width: double.infinity,
+                    height: double.infinity,
                   ),
                   CustomPaint(
                     painter: DrawingPainter([]),
