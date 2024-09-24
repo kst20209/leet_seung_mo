@@ -172,9 +172,7 @@ class FilterGroup extends StatelessWidget {
           children: filters
               .map((filter) => TagChip(
                     label: filter,
-                    onTap: () {
-                      // TODO: 필터 선택 로직 구현
-                    },
+                    onTap: () {},
                   ))
               .toList(),
         ),

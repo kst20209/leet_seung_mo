@@ -13,13 +13,6 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   late Map<String, dynamic> problemData;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    problemData =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -58,7 +51,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                 children: [
                   Image.network(
                     problemData['imageUrl'] ??
-                        'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
+                        'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
                     fit: BoxFit.contain,
                   ),
                   CustomPaint(

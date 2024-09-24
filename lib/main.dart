@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'screens/problem_solving_page.dart';
+import 'screens/problem_solving_page.dart' as problem_solving;
 import 'screens/my_page.dart';
 import 'screens/home_screen.dart';
 import 'screens/problem_shop_page.dart';
-import 'screens/my_problem_page.dart';
+import 'screens/my_problem_page.dart' as my_problem;
+import 'screens/subject_list_page.dart';
+import 'screens/problem_list_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -89,7 +91,10 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const MainScreen(),
-        '/problem_solving': (context) => ProblemSolvingPage(),
+        '/problem_solving': (context) => problem_solving.ProblemSolvingPage(),
+        '/subject_list': (context) => const SubjectListPage(),
+        '/problem_list': (context) =>
+            const ProblemListPage(title: '', items: []),
       },
     );
   }
@@ -108,7 +113,7 @@ class _MainScreenState extends State<MainScreen> {
   static final List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     ProblemShopPage(),
-    MyProblemPage(),
+    my_problem.MyProblemPage(),
     MyPage(),
   ];
 
@@ -130,19 +135,19 @@ class _MainScreenState extends State<MainScreen> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: '홈',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
-            label: 'Shop',
+            label: '상점',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.book),
-            label: 'Problems',
+            label: '문제',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Me',
+            label: '마이',
           ),
         ],
         currentIndex: _selectedIndex,
