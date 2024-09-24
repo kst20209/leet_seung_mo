@@ -30,8 +30,8 @@ class HorizontalSubjectList extends StatelessWidget {
                 SubjectData subject = entry.value;
                 return Padding(
                   padding: EdgeInsets.only(
-                    left: index == 0 ? 16 : 0,
-                    right: 16,
+                    left: index == 0 ? 12 : 0,
+                    right: 12,
                   ),
                   child: SizedBox(
                     width: 160,

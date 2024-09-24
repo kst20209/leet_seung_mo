@@ -9,7 +9,7 @@ class SubjectListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('과목 목록'),
+        title: Text('문제꾸러미 목록'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -20,7 +20,7 @@ class SubjectListPage extends StatelessWidget {
         itemBuilder: (context, index) {
           final subject = myProblems[index];
           return Card(
-            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: ListTile(
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8),

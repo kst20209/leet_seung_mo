@@ -29,7 +29,7 @@ class MyProblemPage extends StatelessWidget {
                   .map((id) => allProblems[id]!)
                   .toList()),
           _buildSection(context, '나의 문제꾸러미', myProblems, isSubject: true),
-          _buildSection(context, '좋아요한 문제',
+          _buildSection(context, '즐겨찾기한 문제',
               favoriteProblemIds.map((id) => allProblems[id]!).toList()),
         ],
       ),
@@ -42,7 +42,7 @@ class MyProblemPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
