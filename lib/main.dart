@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/problem_solving_page.dart' as problem_solving;
 import 'screens/my_page.dart';
 import 'screens/home_screen.dart';
@@ -8,7 +10,11 @@ import 'screens/subject_list_page.dart';
 import 'screens/problem_list_page.dart';
 import 'screens/problem_data.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -91,6 +97,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
+        // routes 수정
         '/': (context) => const MainScreen(),
         '/subject_list': (context) => const SubjectListPage(),
         '/problem_list': (context) =>
@@ -111,6 +118,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// MainScreen
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
