@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import './problem_data.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
-  final ProblemData problemData;
+  final Problem problem;
 
-  ProblemSolvingPage({Key? key, required this.problemData}) : super(key: key);
+  ProblemSolvingPage({Key? key, required this.problem}) : super(key: key);
 
   @override
   _ProblemSolvingPageState createState() => _ProblemSolvingPageState();
@@ -21,7 +21,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.problemData.title),
+        title: Text(widget.problem.title),
         actions: [
           TextButton(
             child: Text(
@@ -55,7 +55,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
               child: Stack(
                 children: [
                   Image.network(
-                    widget.problemData.problemImage,
+                    widget.problem.problemImage,
                     fit: BoxFit.contain,
                     width: double.infinity,
                     height: double.infinity,

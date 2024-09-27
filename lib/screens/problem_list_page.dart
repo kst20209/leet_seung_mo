@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../widgets/tag_chip.dart';
-import '../widgets/horizontal_subject_list.dart';
 import './problem_data.dart';
 
 class ProblemListPage extends StatelessWidget {
   final String title;
-  final List<dynamic> items;
+  final List<Problem> items;
 
   const ProblemListPage({
     Key? key,
@@ -27,46 +26,35 @@ class ProblemListPage extends StatelessWidget {
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
-          return GenericListItem(item: item);
+          return ProblemListItem(problem: item);
         },
       ),
     );
   }
 }
 
-class GenericListItem extends StatelessWidget {
-  final dynamic item;
+class ProblemListItem extends StatelessWidget {
+  final Problem problem;
 
-  const GenericListItem({Key? key, required this.item}) : super(key: key);
+  const ProblemListItem({Key? key, required this.problem}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final bool isProblem = item is ProblemData;
-    final String title =
-        isProblem ? (item as ProblemData).title : (item as SubjectData).title;
-    final String description = isProblem
-        ? (item as ProblemData).description
-        : (item as SubjectData).description;
-    final String imageUrl = isProblem
-        ? (item as ProblemData).imageUrl
-        : (item as SubjectData).imageUrl;
-    final List<String> tags =
-        isProblem ? (item as ProblemData).tags : (item as SubjectData).tags;
+    // 하드코딩된 값들
+    final bool isSolved = false;
+    final String solveTime = '5분 30초';
+    final bool isFavorite = true;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: InkWell(
         onTap: () {
-          if (isProblem) {
-            Navigator.pushNamed(
-              context,
-              '/problem_solving',
-              arguments: item as ProblemData,
-            );
-          } else {
-            // Navigate to problem list for this subject
-            // This part remains unchanged
-          }
+          // Navigate to problem solving page
+          Navigator.pushNamed(
+            context,
+            '/problem_solving',
+            arguments: problem,
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -78,7 +66,7 @@ class GenericListItem extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      imageUrl,
+                      problem.imageUrl,
                       width: 60,
                       height: 60,
                       fit: BoxFit.cover,
@@ -90,59 +78,52 @@ class GenericListItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          title,
+                          problem.title,
                           style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          description,
+                          problem.description,
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                       ],
                     ),
                   ),
-                  if (isProblem)
-                    IconButton(
-                      icon: Icon(
-                        (item as ProblemData).isFavorite
-                            ? Icons.star
-                            : Icons.star_border,
-                        color: Colors.amber,
-                      ),
-                      onPressed: () {
-                        // Toggle favorite status
-                      },
+                  IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
                     ),
+                    onPressed: () {
+                      // Toggle favorite status
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: tags.map((tag) => TagChip(label: tag)).toList(),
+                children:
+                    problem.tags.map((tag) => TagChip(label: tag)).toList(),
               ),
-              if (isProblem) ...[
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      (item as ProblemData).isSolved ? 'Solved' : 'Not Solved',
-                      style: TextStyle(
-                        color: (item as ProblemData).isSolved
-                            ? Colors.green
-                            : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isSolved ? 'Solved' : 'Not Solved',
+                    style: TextStyle(
+                      color: isSolved ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
                     ),
-                    if ((item as ProblemData).isSolved &&
-                        (item as ProblemData).solveTime != null)
-                      Text(
-                        'Time: ${(item as ProblemData).solveTime}',
-                        style: const TextStyle(fontStyle: FontStyle.italic),
-                      ),
-                  ],
-                ),
-              ],
+                  ),
+                  if (isSolved)
+                    Text(
+                      'Time: $solveTime',
+                      style: const TextStyle(fontStyle: FontStyle.italic),
+                    ),
+                ],
+              ),
             ],
           ),
         ),

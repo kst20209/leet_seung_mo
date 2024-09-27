@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/section_title.dart';
 import '../widgets/horizontal_subject_list.dart';
 import './problem_list_page.dart';
-import './subject_list_page.dart';
+import './problem_set_list_page.dart';
 import './problem_data.dart';
 
 class MyProblemPage extends StatelessWidget {
@@ -23,14 +23,16 @@ class MyProblemPage extends StatelessWidget {
       body: ListView(
         children: [
           _buildSection(
-              context,
-              '풀던 문제',
-              recentlyAttemptedProblemIds
-                  .map((id) => allProblems[id]!)
-                  .toList()),
-          _buildSection(context, '나의 문제꾸러미', myProblems, isSubject: true),
-          _buildSection(context, '즐겨찾기한 문제',
-              favoriteProblemIds.map((id) => allProblems[id]!).toList()),
+            context,
+            '풀던 문제',
+            recentlyAttemptedProblemIds.map((id) => problems[id]!).toList(),
+          ),
+          _buildSection(context, '나의 문제꾸러미', myProblemSets, isSubject: true),
+          _buildSection(
+            context,
+            '즐겨찾기한 문제',
+            favoriteProblemIds.map((id) => problems[id]!).toList(),
+          ),
         ],
       ),
     );
@@ -42,7 +44,7 @@ class MyProblemPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -53,7 +55,7 @@ class MyProblemPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SubjectListPage(),
+                        builder: (context) => ProblemSetListPage(),
                       ),
                     );
                   } else {
@@ -62,7 +64,7 @@ class MyProblemPage extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => ProblemListPage(
                           title: title,
-                          items: items,
+                          items: items.cast<Problem>(),
                         ),
                       ),
                     );
@@ -73,21 +75,31 @@ class MyProblemPage extends StatelessWidget {
             ],
           ),
         ),
-        HorizontalSubjectList(
-          subjects: items.map((item) {
-            if (item is ProblemData) {
-              return SubjectData(
-                item.id,
-                item.title,
-                item.description,
-                item.imageUrl,
-                item.tags,
+        HorizontalItemList(
+          items: items.map((item) => convertToGenericItem(item)).toList(),
+          onItemTap: (item) {
+            if (isSubject) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProblemListPage(
+                    title: item.title,
+                    items: problemSetToProblems[item.id]
+                            ?.map((id) => problems[id])
+                            .whereType<Problem>()
+                            .toList() ??
+                        [],
+                  ),
+                ),
               );
-            } else if (item is SubjectData) {
-              return item;
+            } else {
+              Navigator.pushNamed(
+                context,
+                '/problem_solving',
+                arguments: problems[item.id],
+              );
             }
-            throw ArgumentError('Invalid item type');
-          }).toList(),
+          },
         ),
       ],
     );

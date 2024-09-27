@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import './problem_list_page.dart';
 import './problem_data.dart';
 
-class SubjectListPage extends StatelessWidget {
-  const SubjectListPage({Key? key}) : super(key: key);
+class ProblemSetListPage extends StatelessWidget {
+  const ProblemSetListPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,33 +16,33 @@ class SubjectListPage extends StatelessWidget {
         ),
       ),
       body: ListView.builder(
-        itemCount: myProblems.length,
+        itemCount: myProblemSets.length,
         itemBuilder: (context, index) {
-          final subject = myProblems[index];
+          final problemSet = myProblemSets[index];
           return Card(
-            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ListTile(
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  subject.imageUrl,
+                  problemSet.imageUrl,
                   width: 60,
                   height: 60,
                   fit: BoxFit.cover,
                 ),
               ),
-              title: Text(subject.title),
-              subtitle: Text(subject.description),
+              title: Text(problemSet.title),
+              subtitle: Text(problemSet.description),
               trailing: Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProblemListPage(
-                      title: subject.title,
-                      items: subjectToProblemIds[subject.id]
-                              ?.map((id) => allProblems[id])
-                              .whereType<ProblemData>()
+                      title: problemSet.title,
+                      items: problemSetToProblems[problemSet.id]
+                              ?.map((id) => problems[id])
+                              .whereType<Problem>()
                               .toList() ??
                           [],
                     ),

@@ -6,7 +6,7 @@ import 'screens/my_page.dart';
 import 'screens/home_screen.dart';
 import 'screens/problem_shop_page.dart';
 import 'screens/my_problem_page.dart' as my_problem;
-import 'screens/subject_list_page.dart';
+import 'screens/problem_set_list_page.dart';
 import 'screens/problem_list_page.dart';
 import 'screens/problem_data.dart';
 
@@ -99,16 +99,16 @@ class MyApp extends StatelessWidget {
       routes: {
         // routes 수정
         '/': (context) => const MainScreen(),
-        '/subject_list': (context) => const SubjectListPage(),
+        '/subject_list': (context) => const ProblemSetListPage(),
         '/problem_list': (context) =>
             const ProblemListPage(title: '', items: []),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/problem_solving') {
-          final args = settings.arguments as ProblemData;
+          final args = settings.arguments as Problem;
           return MaterialPageRoute(
             builder: (context) {
-              return problem_solving.ProblemSolvingPage(problemData: args);
+              return problem_solving.ProblemSolvingPage(problem: args);
             },
           );
         }

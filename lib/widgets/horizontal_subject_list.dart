@@ -1,20 +1,43 @@
 import 'package:flutter/material.dart';
+import '../screens/problem_data.dart';
 
-class SubjectData {
+class GenericItem {
   final String id;
   final String title;
   final String description;
   final String imageUrl;
-  final List<String> tags;
 
-  SubjectData(this.id, this.title, this.description, this.imageUrl, this.tags);
+  GenericItem({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.imageUrl,
+  });
 }
 
-class HorizontalSubjectList extends StatelessWidget {
-  final List<SubjectData> subjects;
+// GenericItem으로 변환하는 함수 추가
+GenericItem convertToGenericItem(dynamic item) {
+  if (item is Problem || item is ProblemSet) {
+    return GenericItem(
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      imageUrl: item.imageUrl,
+    );
+  } else {
+    throw ArgumentError('Unsupported item type');
+  }
+}
 
-  const HorizontalSubjectList({Key? key, required this.subjects})
-      : super(key: key);
+class HorizontalItemList extends StatelessWidget {
+  final List<GenericItem> items;
+  final Function(GenericItem) onItemTap;
+
+  const HorizontalItemList({
+    Key? key,
+    required this.items,
+    required this.onItemTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +48,9 @@ class HorizontalSubjectList extends StatelessWidget {
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: subjects.asMap().entries.map((entry) {
+              children: items.asMap().entries.map((entry) {
                 int index = entry.key;
-                SubjectData subject = entry.value;
+                GenericItem item = entry.value;
                 return Padding(
                   padding: EdgeInsets.only(
                     left: index == 0 ? 12 : 0,
@@ -35,7 +58,7 @@ class HorizontalSubjectList extends StatelessWidget {
                   ),
                   child: SizedBox(
                     width: 160,
-                    child: SubjectCard(subject: subject),
+                    child: ItemCard(item: item, onTap: onItemTap),
                   ),
                 );
               }).toList(),
@@ -47,42 +70,44 @@ class HorizontalSubjectList extends StatelessWidget {
   }
 }
 
-class SubjectCard extends StatelessWidget {
-  final SubjectData subject;
+class ItemCard extends StatelessWidget {
+  final GenericItem item;
+  final Function(GenericItem) onTap;
 
-  const SubjectCard({Key? key, required this.subject}) : super(key: key);
+  const ItemCard({Key? key, required this.item, required this.onTap})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Container(
-        width: 150,
+      child: InkWell(
+        onTap: () => onTap(item),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
-                subject.imageUrl,
+                item.imageUrl,
                 height: 120,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
-            Container(
+            Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    subject.title,
+                    item.title,
                     style: Theme.of(context).textTheme.titleMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
                   Text(
-                    subject.description,
+                    item.description,
                     style: Theme.of(context).textTheme.bodyMedium,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
