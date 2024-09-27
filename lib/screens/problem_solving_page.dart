@@ -1,6 +1,6 @@
 export 'problem_solving_page.dart';
 import 'package:flutter/material.dart';
-import './problem_data.dart';
+import '../models/models.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
   final Problem problem;

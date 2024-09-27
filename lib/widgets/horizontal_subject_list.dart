@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/problem_data.dart';
+import '../models/models.dart';
 
 class GenericItem {
   final String id;

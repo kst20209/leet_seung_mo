@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/tag_chip.dart';
-import './problem_data.dart';
+import '../models/models.dart';
 
 class ProblemListPage extends StatelessWidget {
   final String title;

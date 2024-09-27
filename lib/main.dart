@@ -8,7 +8,7 @@ import 'screens/problem_shop_page.dart';
 import 'screens/my_problem_page.dart' as my_problem;
 import 'screens/problem_set_list_page.dart';
 import 'screens/problem_list_page.dart';
-import 'screens/problem_data.dart';
+import 'models/models.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
