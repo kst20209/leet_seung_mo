@@ -3,7 +3,7 @@ import '../widgets/section_title.dart';
 import '../widgets/horizontal_subject_list.dart';
 import './problem_list_page.dart';
 import './problem_set_list_page.dart';
-import './problem_data.dart';
+import '../utils/problem_data.dart';
 import '../models/models.dart';
 
 class MyProblemPage extends StatelessWidget {
