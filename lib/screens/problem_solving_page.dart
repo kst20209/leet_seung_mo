@@ -1,6 +1,5 @@
 export 'problem_solving_page.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import '../models/models.dart';
 
@@ -20,6 +19,19 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   bool isEraserMode = false;
   List<List<DrawingPoint>> strokes = [];
   List<DrawingPoint> currentStroke = [];
+  Offset? currentPosition;
+  final double eraserWidth = 10.0;
+  bool isColorMenuOpen = false;
+  bool isStrokeWidthMenuOpen = false;
+
+  final List<Color> colors = [
+    Colors.black,
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.yellow
+  ];
+  final List<double> strokeWidths = [1.0, 2.0, 3.0];
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +65,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
       body: Column(
         children: [
           _buildToolbar(),
+          if (isColorMenuOpen) _buildColorMenu(),
+          if (isStrokeWidthMenuOpen) _buildStrokeWidthMenu(),
           Expanded(
             child: Stack(
               children: [
@@ -75,6 +89,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                   onPointerDown: (PointerDownEvent event) {
                     if (event.kind == PointerDeviceKind.stylus) {
                       setState(() {
+                        currentPosition = event.localPosition;
                         if (isEraserMode) {
                           _erase(event.localPosition);
                         } else {
@@ -89,6 +104,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                   onPointerMove: (PointerMoveEvent event) {
                     if (event.kind == PointerDeviceKind.stylus) {
                       setState(() {
+                        currentPosition = event.localPosition;
                         if (isEraserMode) {
                           _erase(event.localPosition);
                         } else {
@@ -99,8 +115,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                     }
                   },
                   onPointerUp: (PointerUpEvent event) {
-                    if (event.kind == PointerDeviceKind.stylus &&
-                        !isEraserMode) {
+                    if (event.kind == PointerDeviceKind.stylus) {
+                      currentPosition = null;
                       setState(() {
                         strokes.add(List.from(currentStroke));
                         currentStroke.clear();
@@ -108,7 +124,13 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                     }
                   },
                   child: CustomPaint(
-                    painter: DrawingPainter(strokes, currentStroke),
+                    painter: DrawingPainter(
+                        strokes,
+                        currentStroke,
+                        isEraserMode,
+                        currentPosition,
+                        strokeWidth,
+                        eraserWidth),
                     child: Container(
                       height: double.infinity,
                       width: double.infinity,
@@ -124,10 +146,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 
   void _erase(Offset point) {
-    setState(() {
-      strokes.removeWhere((stroke) => stroke.any((drawPoint) =>
-          (drawPoint.offset - point).distance <= strokeWidth / 2));
-    });
+    strokes.removeWhere((stroke) => stroke.any(
+        (drawPoint) => (drawPoint.offset - point).distance <= eraserWidth / 2));
   }
 
   void _showStopSolvingDialog() {
@@ -162,12 +182,12 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
       padding: EdgeInsets.all(8.0),
       color: Colors.grey[200],
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildColorButton(Colors.black),
-          _buildColorButton(Colors.red),
-          _buildColorButton(Colors.blue),
-          _buildStrokeWidthSlider(),
+          _buildMainColorButton(),
+          SizedBox(width: 16),
+          _buildMainStrokeWidthButton(),
+          SizedBox(width: 16),
           IconButton(
             icon: Icon(Icons.edit),
             color: isEraserMode ? Colors.grey : Colors.black,
@@ -178,7 +198,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.clear),
+            icon: Icon(Icons.cleaning_services),
             color: isEraserMode ? Colors.red : Colors.black,
             onPressed: () {
               setState(() {
@@ -186,8 +206,107 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
               });
             },
           ),
-          _buildTimer(),
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              // 설정 기능 구현
+            },
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMainColorButton() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isColorMenuOpen = !isColorMenuOpen;
+          isStrokeWidthMenuOpen = false;
+        });
+      },
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: selectedColor,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.grey, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainStrokeWidthButton() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isStrokeWidthMenuOpen = !isStrokeWidthMenuOpen;
+          isColorMenuOpen = false;
+        });
+      },
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.grey, width: 2),
+        ),
+        child: Icon(Icons.circle, size: strokeWidth * 6, color: Colors.black),
+      ),
+    );
+  }
+
+  Widget _buildColorMenu() {
+    return Container(
+      margin: EdgeInsets.only(top: 8),
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(10),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: colors.map((color) => _buildColorButton(color)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildStrokeWidthMenu() {
+    return Container(
+      margin: EdgeInsets.only(top: 8),
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(10),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: strokeWidths
+            .map((width) => _buildStrokeWidthButton(width))
+            .toList(),
       ),
     );
   }
@@ -211,6 +330,27 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             width: 2,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStrokeWidthButton(double width) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          strokeWidth = width;
+          isStrokeWidthMenuOpen = false;
+        });
+      },
+      child: Container(
+        width: 30,
+        height: 30,
+        margin: EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: strokeWidth == width ? Colors.grey[400] : Colors.transparent,
+        ),
+        child: Icon(Icons.circle, size: width * 6, color: Colors.black),
       ),
     );
   }
@@ -273,15 +413,33 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 class DrawingPainter extends CustomPainter {
   final List<List<DrawingPoint>> strokes;
   final List<DrawingPoint> currentStroke;
+  final bool isEraserMode;
+  final Offset? currentPosition;
+  final double strokeWidth;
+  final double eraserWidth;
 
-  DrawingPainter(this.strokes, this.currentStroke);
-
+  DrawingPainter(this.strokes, this.currentStroke, this.isEraserMode,
+      this.currentPosition, this.strokeWidth, this.eraserWidth);
   @override
   void paint(Canvas canvas, Size size) {
     for (var stroke in strokes) {
       _drawStroke(canvas, stroke);
     }
     _drawStroke(canvas, currentStroke);
+
+    if (isEraserMode && currentPosition != null) {
+      final eraserPaint = Paint()
+        ..color = Colors.grey
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      final eraserFillPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(currentPosition!, eraserWidth / 2, eraserFillPaint);
+      canvas.drawCircle(currentPosition!, eraserWidth / 2, eraserPaint);
+    }
   }
 
   void _drawStroke(Canvas canvas, List<DrawingPoint> stroke) {
@@ -297,7 +455,7 @@ class DrawingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
 
 class DrawingPoint {
