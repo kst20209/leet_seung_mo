@@ -1,5 +1,7 @@
 export 'problem_solving_page.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/gestures.dart';
 import '../models/models.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
@@ -16,6 +18,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   Color selectedColor = Colors.black;
   double strokeWidth = 2.0;
   bool isEraserMode = false;
+  List<List<DrawingPoint>> strokes = [];
+  List<DrawingPoint> currentStroke = [];
 
   @override
   Widget build(BuildContext context) {
@@ -46,34 +50,84 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
           ),
         ],
       ),
-      body: Container(
-        color: Colors.white,
-        child: Column(
-          children: [
-            _buildToolbar(),
-            Expanded(
-              child: Stack(
-                children: [
-                  Image.network(
-                    widget.problem.problemImage,
-                    fit: BoxFit.contain,
-                    width: double.infinity,
-                    height: double.infinity,
+      body: Column(
+        children: [
+          _buildToolbar(),
+          Expanded(
+            child: Stack(
+              children: [
+                Container(color: Colors.white),
+                Positioned(
+                  left: 20,
+                  top: 20,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width - 40,
+                    ),
+                    child: Image.network(
+                      widget.problem.problemImage,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  CustomPaint(
-                    painter: DrawingPainter([]),
+                ),
+                Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (PointerDownEvent event) {
+                    if (event.kind == PointerDeviceKind.stylus) {
+                      setState(() {
+                        if (isEraserMode) {
+                          _erase(event.localPosition);
+                        } else {
+                          currentStroke = [
+                            DrawingPoint(
+                                event.localPosition, selectedColor, strokeWidth)
+                          ];
+                        }
+                      });
+                    }
+                  },
+                  onPointerMove: (PointerMoveEvent event) {
+                    if (event.kind == PointerDeviceKind.stylus) {
+                      setState(() {
+                        if (isEraserMode) {
+                          _erase(event.localPosition);
+                        } else {
+                          currentStroke.add(DrawingPoint(
+                              event.localPosition, selectedColor, strokeWidth));
+                        }
+                      });
+                    }
+                  },
+                  onPointerUp: (PointerUpEvent event) {
+                    if (event.kind == PointerDeviceKind.stylus &&
+                        !isEraserMode) {
+                      setState(() {
+                        strokes.add(List.from(currentStroke));
+                        currentStroke.clear();
+                      });
+                    }
+                  },
+                  child: CustomPaint(
+                    painter: DrawingPainter(strokes, currentStroke),
                     child: Container(
                       height: double.infinity,
                       width: double.infinity,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _erase(Offset point) {
+    setState(() {
+      strokes.removeWhere((stroke) => stroke.any((drawPoint) =>
+          (drawPoint.offset - point).distance <= strokeWidth / 2));
+    });
   }
 
   void _showStopSolvingDialog() {
@@ -217,12 +271,30 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 }
 
 class DrawingPainter extends CustomPainter {
-  final List<DrawingPoint> drawingPoints;
+  final List<List<DrawingPoint>> strokes;
+  final List<DrawingPoint> currentStroke;
 
-  DrawingPainter(this.drawingPoints);
+  DrawingPainter(this.strokes, this.currentStroke);
 
   @override
-  void paint(Canvas canvas, Size size) {}
+  void paint(Canvas canvas, Size size) {
+    for (var stroke in strokes) {
+      _drawStroke(canvas, stroke);
+    }
+    _drawStroke(canvas, currentStroke);
+  }
+
+  void _drawStroke(Canvas canvas, List<DrawingPoint> stroke) {
+    for (int i = 0; i < stroke.length - 1; i++) {
+      canvas.drawLine(
+          stroke[i].offset,
+          stroke[i + 1].offset,
+          Paint()
+            ..color = stroke[i].color
+            ..strokeWidth = stroke[i].strokeWidth
+            ..strokeCap = StrokeCap.round);
+    }
+  }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
@@ -230,7 +302,8 @@ class DrawingPainter extends CustomPainter {
 
 class DrawingPoint {
   final Offset offset;
-  final Paint paint;
+  final Color color;
+  final double strokeWidth;
 
-  DrawingPoint(this.offset, this.paint);
+  DrawingPoint(this.offset, this.color, this.strokeWidth);
 }
