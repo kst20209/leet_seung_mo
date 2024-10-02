@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui' as ui;
 import '../models/models.dart';
+import '../widgets/timer_widget.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
   final Problem problem;
@@ -30,6 +31,9 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
   final GlobalKey _toolbarKey = GlobalKey();
 
+  int _elapsedSeconds = 0;
+  GlobalKey<TimerWidgetState> timerKey = GlobalKey<TimerWidgetState>();
+
   @override
   void dispose() {
     _removeOverlays();
@@ -45,114 +49,111 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.problem.title),
-        actions: [
-          TextButton(
-            child: Text(
-              isTimerPaused ? '계속 풀기' : '일시정지',
-              style: TextStyle(color: Colors.black),
-            ),
-            onPressed: () {
-              setState(() {
-                isTimerPaused = !isTimerPaused;
-              });
-            },
-          ),
-          TextButton(
-            child: Text('그만 풀기', style: TextStyle(color: Colors.black)),
+    return WillPopScope(
+      onWillPop: () async {
+        _showStopSolvingDialog();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.problem.title),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
             onPressed: _showStopSolvingDialog,
           ),
-          TextButton(
-            child: Text('정답 제출', style: TextStyle(color: Colors.black)),
-            onPressed: () {
-              _showAnswerSubmissionDialog();
-            },
-          ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: _removeOverlays,
-        child: Column(
-          children: [
-            _buildToolbar(),
-            Expanded(
-              child: Stack(
-                children: [
-                  Container(color: Colors.white),
-                  Positioned(
-                    left: 20,
-                    top: 20,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width - 40,
-                      ),
-                      child: Image.network(
-                        widget.problem.problemImage,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  Listener(
-                    behavior: HitTestBehavior.opaque,
-                    onPointerDown: (PointerDownEvent event) {
-                      if (event.kind == PointerDeviceKind.stylus) {
-                        setState(() {
-                          currentPosition = event.localPosition;
-                          if (isEraserMode) {
-                            _erase(event.localPosition);
-                          } else {
-                            currentStroke = [
-                              DrawingPoint(event.localPosition, selectedColor,
-                                  strokeWidth)
-                            ];
-                          }
-                        });
-                      }
-                    },
-                    onPointerMove: (PointerMoveEvent event) {
-                      if (event.kind == PointerDeviceKind.stylus) {
-                        setState(() {
-                          currentPosition = event.localPosition;
-                          if (isEraserMode) {
-                            _erase(event.localPosition);
-                          } else {
-                            currentStroke.add(DrawingPoint(event.localPosition,
-                                selectedColor, strokeWidth));
-                          }
-                        });
-                      }
-                    },
-                    onPointerUp: (PointerUpEvent event) {
-                      if (event.kind == PointerDeviceKind.stylus) {
-                        setState(() {
-                          currentPosition = null;
-                          if (!isEraserMode) {
-                            strokes.add(List.from(currentStroke));
-                            currentStroke.clear();
-                          }
-                        });
-                      }
-                    },
-                    child: CustomPaint(
-                      painter: DrawingPainter(
-                          strokes,
-                          currentStroke,
-                          isEraserMode,
-                          currentPosition,
-                          strokeWidth,
-                          eraserWidth),
-                      child: Container(
-                        height: double.infinity,
-                        width: double.infinity,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          actions: [
+            TextButton(
+              child: Text('정답 제출', style: TextStyle(color: Colors.black)),
+              onPressed: () {
+                _showAnswerSubmissionDialog();
+              },
             ),
           ],
+        ),
+        body: GestureDetector(
+          onTap: _removeOverlays,
+          child: Column(
+            children: [
+              _buildToolbar(),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Container(color: Colors.white),
+                    Positioned(
+                      left: 20,
+                      top: 20,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width - 40,
+                        ),
+                        child: Image.network(
+                          widget.problem.problemImage,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    Listener(
+                      behavior: HitTestBehavior.opaque,
+                      onPointerDown: (PointerDownEvent event) {
+                        if (event.kind == PointerDeviceKind.stylus) {
+                          setState(() {
+                            currentPosition = event.localPosition;
+                            if (isEraserMode) {
+                              _erase(event.localPosition);
+                            } else {
+                              currentStroke = [
+                                DrawingPoint(event.localPosition, selectedColor,
+                                    strokeWidth)
+                              ];
+                            }
+                          });
+                        }
+                      },
+                      onPointerMove: (PointerMoveEvent event) {
+                        if (event.kind == PointerDeviceKind.stylus) {
+                          setState(() {
+                            currentPosition = event.localPosition;
+                            if (isEraserMode) {
+                              _erase(event.localPosition);
+                            } else {
+                              currentStroke.add(DrawingPoint(
+                                  event.localPosition,
+                                  selectedColor,
+                                  strokeWidth));
+                            }
+                          });
+                        }
+                      },
+                      onPointerUp: (PointerUpEvent event) {
+                        if (event.kind == PointerDeviceKind.stylus) {
+                          setState(() {
+                            currentPosition = null;
+                            if (!isEraserMode) {
+                              strokes.add(List.from(currentStroke));
+                              currentStroke.clear();
+                            }
+                          });
+                        }
+                      },
+                      child: CustomPaint(
+                        painter: DrawingPainter(
+                            strokes,
+                            currentStroke,
+                            isEraserMode,
+                            currentPosition,
+                            strokeWidth,
+                            eraserWidth),
+                        child: Container(
+                          height: double.infinity,
+                          width: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -190,10 +191,10 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             },
           ),
           SizedBox(width: 20),
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              // 설정 기능 구현
+          TimerWidget(
+            key: timerKey,
+            onTimerUpdate: (seconds) {
+              _elapsedSeconds = seconds;
             },
           ),
         ],
@@ -426,24 +427,6 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     );
   }
 
-  Widget _buildStrokeWidthSlider() {
-    return Container(
-      width: 150,
-      child: Slider(
-        value: strokeWidth,
-        min: 1,
-        max: 10,
-        divisions: 9,
-        label: strokeWidth.round().toString(),
-        onChanged: (double value) {
-          setState(() {
-            strokeWidth = value;
-          });
-        },
-      ),
-    );
-  }
-
   Widget _buildTimer() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -459,6 +442,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 
   void _showAnswerSubmissionDialog() {
+    timerKey.currentState?.pauseTimer();
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -466,18 +450,28 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
           title: Text('정답 선택'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: List.generate(5, (index) {
-              return ListTile(
-                title: Text('${index + 1}번'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                },
-              );
-            }),
+            children: [
+              Text('걸린 시간: ${_formatTime(_elapsedSeconds)}'),
+              ...List.generate(5, (index) {
+                return ListTile(
+                  title: Text('${index + 1}번'),
+                  onTap: () {
+                    // 여기에 정답 제출 로직 추가
+                    Navigator.of(context).pop();
+                  },
+                );
+              }),
+            ],
           ),
         );
       },
     );
+  }
+
+  String _formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 }
 
