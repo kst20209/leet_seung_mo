@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/widgets/tag_chip.dart';
-import '../widgets/problem_item.dart';
+import '../widgets/problem_set_item.dart';
+import '../utils/data_manager.dart';
+import '../models/models.dart';
 
 class ProblemShopPage extends StatefulWidget {
   const ProblemShopPage({super.key});
@@ -11,68 +13,19 @@ class ProblemShopPage extends StatefulWidget {
 
 class _ProblemShopPageState extends State<ProblemShopPage> {
   bool _isFilterExpanded = false;
-  List<Map<String, dynamic>> _problems = [];
+  List<ProblemSet> _problemSets = [];
+  final DataManager _dataManager = DataManager();
 
   @override
   void initState() {
     super.initState();
-    _fetchProblems();
+    _fetchProblemSets();
   }
 
-  void _fetchProblems() {
+  Future<void> _fetchProblemSets() async {
+    final problemSets = await _dataManager.getProblemSets();
     setState(() {
-      _problems = [
-        {
-          'id': '1',
-          'title': '자연과학 복합형 꾸러미 1',
-          'tags': ['추리논증', '복합형', '자연과학'],
-          'price': 500,
-          'imageUrl':
-              'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
-          'totalProblems': 15,
-          'description': '자연과학 복합형 문제를 모았습니다.'
-        },
-        {
-          'id': '2',
-          'title': '사회과학 추론형 꾸러미 1',
-          'tags': ['추리논증', '추론형', '사회과학'],
-          'price': 500,
-          'imageUrl':
-              'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
-          'totalProblems': 15,
-          'description': '사회과학 추론형 문제를 모았습니다.'
-        },
-        {
-          'id': '3',
-          'title': '추리논증 다이어그램형 문제꾸러미 1',
-          'tags': ["추리논증", "다이어그램형"],
-          'price': 500,
-          'imageUrl':
-              'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%8B%A4%EC%9D%B4%EC%96%B4%EA%B7%B8%EB%9E%A8%ED%98%95.png?alt=media&token=2e1290bf-f6c9-403c-bb70-ac270718e6e0',
-          'totalProblems': 10,
-          'description': '추리논증 다이어그램형 문제를 모았습니다.'
-        },
-        {
-          'id': '4',
-          'title': '추리논증 논쟁형 복합형 문제꾸러미',
-          'tags': ["추리논증", "논쟁형", "복합형"],
-          'price': 500,
-          'imageUrl':
-              'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%85%BC%EC%9F%81%ED%98%95.png?alt=media&token=e88eb6a5-d88b-46d9-93a5-21feb5fcc124',
-          'totalProblems': 15,
-          'description': '논쟁형 복합형 문제를 모았습니다.'
-        },
-        {
-          'id': '5',
-          'title': '추리논증 결과분석형 자연과학 문제꾸러미',
-          'tags': ["추리논증", "결과분석형", "자연과학"],
-          'price': 500,
-          'imageUrl':
-              'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EC%B0%A8%ED%8A%B8%ED%98%95.png?alt=media&token=dcb2f00f-c669-4f4d-8e1b-e2d2dea860b4',
-          'totalProblems': 15,
-          'description': '자연과학 결과분석형 문제를 모았습니다.'
-        },
-      ];
+      _problemSets = problemSets;
     });
   }
 
@@ -95,9 +48,9 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: _problems.length,
+              itemCount: _problemSets.length,
               itemBuilder: (context, index) {
-                return ProblemItem(problemData: _problems[index]);
+                return ProblemSetItem(problemSet: _problemSets[index]);
               },
             ),
           ),

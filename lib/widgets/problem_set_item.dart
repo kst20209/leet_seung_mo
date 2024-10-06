@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import './tag_chip.dart';
 import '../screens/problem_sell_detail.dart';
+import '../models/models.dart';
 
-class ProblemItem extends StatelessWidget {
-  final Map<String, dynamic> problemData;
+class ProblemSetItem extends StatelessWidget {
+  final ProblemSet problemSet;
 
-  ProblemItem({required this.problemData});
+  const ProblemSetItem({Key? key, required this.problemSet}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +17,7 @@ class ProblemItem extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProblemSellDetail(problemData: problemData),
+              builder: (context) => ProblemSellDetail(problemSet: problemSet),
             ),
           );
         },
@@ -31,8 +32,7 @@ class ProblemItem extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    problemData['imageUrl'] ??
-                        'https://via.placeholder.com/150',
+                    problemSet.imageUrl,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -44,21 +44,21 @@ class ProblemItem extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      problemData['title'] ?? '제목 없음',
+                      problemSet.title,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     SizedBox(height: 4),
                     Wrap(
                       spacing: 4,
                       runSpacing: 4,
-                      children: (problemData['tags'] as List<dynamic>? ?? [])
+                      children: problemSet.tags
                           .map((tag) => TagChip(label: tag))
                           .toList(),
                     ),
                     SizedBox(height: 4),
                     Align(
                       alignment: Alignment.bottomRight,
-                      child: Text('P ${problemData['price'] ?? 0}',
+                      child: Text('P ${problemSet.price}',
                           style: Theme.of(context).textTheme.headlineMedium),
                     ),
                   ],

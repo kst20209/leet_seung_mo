@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/widgets/tag_chip.dart';
+import '../models/models.dart';
 
 class ProblemSellDetail extends StatelessWidget {
-  final Map<String, dynamic> problemData;
+  final ProblemSet problemSet;
 
-  const ProblemSellDetail({super.key, required this.problemData});
+  const ProblemSellDetail({super.key, required this.problemSet});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +17,7 @@ class ProblemSellDetail extends StatelessWidget {
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: HeroImage(imageUrl: problemData['imageUrl']),
+              background: HeroImage(imageUrl: problemSet.imageUrl),
             ),
           ),
           SliverToBoxAdapter(
@@ -26,19 +27,19 @@ class ProblemSellDetail extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    problemData['title'],
+                    problemSet.title,
                     style: Theme.of(context).textTheme.displayMedium,
                   ),
                   const SizedBox(height: 8),
-                  TagList(tags: problemData['tags']),
+                  TagList(tags: problemSet.tags),
                   const SizedBox(height: 16),
                   Text(
-                    '총 문제 수: ${problemData['totalProblems']}',
+                    '총 문제 수: ${problemSet.totalProblems}',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    problemData['description'],
+                    problemSet.description,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 24),
@@ -46,7 +47,7 @@ class ProblemSellDetail extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '가격: ${problemData['price']}P',
+                        '가격: ${problemSet.price}P',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       BuyButton(onPressed: () {
