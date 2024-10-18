@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/widgets/tag_chip.dart';
 import '../models/models.dart';
+import '../utils/custom_network_image.dart';
 
 class ProblemSellDetail extends StatelessWidget {
   final ProblemSet problemSet;
@@ -74,8 +75,8 @@ class HeroImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Hero(
       tag: imageUrl,
-      child: Image.network(
-        imageUrl,
+      child: CustomNetworkImage(
+        imageUrl: imageUrl,
         fit: BoxFit.cover,
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/tag_chip.dart';
 import '../models/models.dart';
+import '../utils/custom_network_image.dart';
 
 class ProblemListPage extends StatelessWidget {
   final String title;
@@ -65,8 +66,8 @@ class ProblemListItem extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      problem.imageUrl,
+                    child: CustomNetworkImage(
+                      imageUrl: problem.imageUrl,
                       width: 60,
                       height: 60,
                       fit: BoxFit.cover,

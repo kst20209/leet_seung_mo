@@ -3,6 +3,7 @@ import '../widgets/promo_banner.dart';
 import '../widgets/section_title.dart';
 import '../widgets/horizontal_subject_list.dart';
 import '../utils/problem_data.dart';
+import '../utils/custom_network_image.dart';
 import '../screens/problem_solving_page.dart';
 import '../screens/problem_list_page.dart';
 import '../models/models.dart';
@@ -128,8 +129,8 @@ class HomeScreen extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-              child: Image.network(
-                problemSet.imageUrl,
+              child: CustomNetworkImage(
+                imageUrl: problemSet.imageUrl,
                 height: 100,
                 width: double.infinity,
                 fit: BoxFit.cover,

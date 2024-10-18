@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './problem_list_page.dart';
 import '../utils/problem_data.dart';
+import '../utils/custom_network_image.dart';
 import '../models/models.dart';
 
 class ProblemSetListPage extends StatelessWidget {
@@ -25,8 +26,8 @@ class ProblemSetListPage extends StatelessWidget {
             child: ListTile(
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  problemSet.imageUrl,
+                child: CustomNetworkImage(
+                  imageUrl: problemSet.imageUrl,
                   width: 60,
                   height: 60,
                   fit: BoxFit.cover,

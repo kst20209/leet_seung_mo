@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/custom_network_image.dart';
 import 'dart:async';
 
 class PromoBanner extends StatefulWidget {
@@ -92,16 +93,9 @@ class _PromoBannerState extends State<PromoBanner> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            Uri.encodeFull(data['imageUrl']!),
+          CustomNetworkImage(
+            imageUrl: Uri.encodeFull(data['imageUrl']!),
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              print('Error loading image: $error');
-              return Container(
-                color: Colors.grey,
-                child: Icon(Icons.error),
-              );
-            },
           ),
           Container(
             decoration: BoxDecoration(

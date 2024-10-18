@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../utils/custom_network_image.dart';
 
 class GenericItem {
   final String id;
@@ -87,8 +88,8 @@ class ItemCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              child: Image.network(
-                item.imageUrl,
+              child: CustomNetworkImage(
+                imageUrl: item.imageUrl,
                 height: 120,
                 width: double.infinity,
                 fit: BoxFit.cover,

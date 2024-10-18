@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/custom_network_image.dart';
 import './tag_chip.dart';
 import '../screens/problem_sell_detail.dart';
 import '../models/models.dart';
@@ -31,8 +32,8 @@ class ProblemSetItem extends StatelessWidget {
                 height: 90,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    problemSet.imageUrl,
+                  child: CustomNetworkImage(
+                    imageUrl: problemSet.imageUrl,
                     fit: BoxFit.cover,
                   ),
                 ),
