@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'dart:ui' as ui;
 import '../models/models.dart';
 import '../widgets/timer_widget.dart';
+import '../utils/custom_network_image.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
   final Problem problem;
@@ -86,8 +87,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width - 40,
                         ),
-                        child: Image.network(
-                          widget.problem.problemImage,
+                        child: CustomNetworkImage(
+                          imageUrl: widget.problem.problemImage,
                           fit: BoxFit.contain,
                         ),
                       ),
