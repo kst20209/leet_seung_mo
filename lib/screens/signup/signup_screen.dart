@@ -60,7 +60,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             },
           ),
           EmailPasswordScreen(
-            onNext: _setEmailAndPassword,
+            onNext: _goToNextPage,
           ),
           PhoneVerificationScreen(
             onSendCode: _sendVerificationCode,
@@ -79,31 +79,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  void _goToNextPage() {
+  Future<void> _goToNextPage() async {
     if (_currentPage < 4) {
-      _pageController.nextPage(
+      await _pageController.nextPage(
         duration: Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
       setState(() {
         _currentPage++;
       });
-    }
-  }
-
-  Future<String?> _setEmailAndPassword(String email, String password) async {
-    try {
-      UserCredential userCredential =
-          await _userRepository.createAccount(email, password);
-      _currentUser = userCredential.user;
-      _email = email;
-      _password = password;
-      _goToNextPage();
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return _userRepository.getErrorMessage(e);
-    } catch (e) {
-      return '계정 생성 중 오류가 발생했습니다. 다시 시도해 주세요.';
     }
   }
 
@@ -130,7 +114,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
       try {
         await FirebaseAuth.instance.signInWithCredential(credential);
-        _goToNextPage();
+        await _goToNextPage();
       } catch (e) {
         print("Error verifying SMS code: $e");
       }
@@ -160,7 +144,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
       await _userRepository.addPhoneNumber(
           _currentUser!.uid, _phoneNumber!, _nickname!);
-      _goToNextPage(); // Go to Thank You page
+      await _goToNextPage(); // Go to Thank You page
     } catch (e) {
       setState(() {
         _nicknameError = '회원가입을 완료할 수 없습니다. 다시 시도해 주세요.';
