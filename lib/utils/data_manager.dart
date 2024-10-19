@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../models/models.dart';
 import 'data_repository.dart';
+import 'user_repository.dart';
 
 class DataManager {
   static final DataManager _instance = DataManager._internal();
@@ -8,6 +9,11 @@ class DataManager {
   DataManager._internal();
 
   final DataRepository _repository = DataRepository();
+  late final UserRepository userRepository;
+
+  void initialize(UserRepository userRepo) {
+    userRepository = userRepo;
+  }
 
   List<ProblemSet>? _cachedProblemSets;
   DateTime? _lastFetchTime;

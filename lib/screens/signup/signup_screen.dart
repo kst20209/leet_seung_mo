@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'build_terms_page.dart';
 import 'email_password_screen.dart';
 import 'phone_verification_screen.dart';
 import 'nickname_screen.dart';
 import 'build_thankyou_page.dart';
+import '../../utils/firebase_service.dart';
+import '../../utils/user_repository.dart';
+import '../../utils/data_manager.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -14,6 +16,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final PageController _pageController = PageController();
+  late final UserRepository _userRepository;
   int _currentPage = 0;
   bool _agreedToTerms = false;
   String? _email;
@@ -21,6 +24,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _phoneNumber;
   String? _nickname;
   String? _verificationId;
+  User? _currentUser;
+
+  String? _emailError;
+  String? _passwordError;
+  String? _phoneError;
+  String? _nicknameError;
+
+  @override
+  void initState() {
+    super.initState();
+    final firebaseService = FirebaseService();
+    _userRepository = UserRepository(firebaseService);
+    DataManager().initialize(_userRepository);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +59,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               }
             },
           ),
-          EmailPasswordScreen(onNext: _setEmailAndPassword),
+          EmailPasswordScreen(
+            onNext: _setEmailAndPassword,
+          ),
           PhoneVerificationScreen(
             onSendCode: _sendVerificationCode,
             onVerifyCode: _verifyCode,
@@ -72,24 +91,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  void _goToPreviousPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      setState(() {
-        _currentPage--;
-      });
-    }
-  }
-
-  void _setEmailAndPassword(String email, String password) {
-    setState(() {
+  Future<String?> _setEmailAndPassword(String email, String password) async {
+    try {
+      UserCredential userCredential =
+          await _userRepository.createAccount(email, password);
+      _currentUser = userCredential.user;
       _email = email;
       _password = password;
-    });
-    _goToNextPage();
+      _goToNextPage();
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _userRepository.getErrorMessage(e);
+    } catch (e) {
+      return '계정 생성 중 오류가 발생했습니다. 다시 시도해 주세요.';
+    }
   }
 
   void _sendVerificationCode(String phoneNumber) async {
@@ -125,6 +140,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _setPhoneNumber(String phoneNumber) {
     setState(() {
       _phoneNumber = phoneNumber;
+      _phoneError = null;
     });
     _goToNextPage();
   }
@@ -132,35 +148,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _setNickname(String nickname) {
     setState(() {
       _nickname = nickname;
+      _nicknameError = null;
     });
     _finishSignUp();
   }
 
   void _finishSignUp() async {
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _email!,
-        password: _password!,
-      );
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
-        'email': _email,
-        'phoneNumber': _phoneNumber,
-        'nickname': _nickname,
-        'createdAt': FieldValue.serverTimestamp(),
-        'currentPoints': 0,
-        'purchasedProblemSets': [],
-        'lastSolvedProblems': [],
-      });
-
+      if (_currentUser == null) {
+        throw Exception('User not created');
+      }
+      await _userRepository.addPhoneNumber(
+          _currentUser!.uid, _phoneNumber!, _nickname!);
       _goToNextPage(); // Go to Thank You page
     } catch (e) {
-      // TODO: Handle errors and show appropriate messages to the user
-      print('Error during sign up: $e');
+      setState(() {
+        _nicknameError = '회원가입을 완료할 수 없습니다. 다시 시도해 주세요.';
+      });
     }
   }
 }

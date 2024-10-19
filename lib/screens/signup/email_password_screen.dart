@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/build_text_field.dart';
 
 class EmailPasswordScreen extends StatefulWidget {
-  final Function(String email, String password) onNext;
+  final Future<String?> Function(String email, String password) onNext;
 
   EmailPasswordScreen({required this.onNext});
 
@@ -108,10 +108,22 @@ class _EmailPasswordScreenState extends State<EmailPasswordScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: () {
+              onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  widget.onNext(
+                  String? error = await widget.onNext(
                       _emailController.text, _passwordController.text);
+                  print(error);
+                  if (error != null) {
+                    setState(() {
+                      _emailError = error;
+                    });
+                  } else {
+                    // 에러가 없으면 에러 메시지를 지웁니다.
+                    setState(() {
+                      _emailError = null;
+                      _passwordError = null;
+                    });
+                  }
                 }
               },
             ),
