@@ -9,6 +9,7 @@ import 'screens/my_problem_page.dart' as my_problem;
 import 'screens/problem_set_list_page.dart';
 import 'screens/problem_list_page.dart';
 import 'models/models.dart';
+import 'screens/signup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -133,7 +134,7 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     ProblemShopPage(),
     my_problem.MyProblemPage(),
-    MyPage(),
+    SignUpScreen(),
   ];
 
   void _onItemTapped(int index) {
