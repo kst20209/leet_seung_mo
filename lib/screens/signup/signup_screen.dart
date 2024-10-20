@@ -19,17 +19,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   late final UserRepository _userRepository;
   int _currentPage = 0;
   bool _agreedToTerms = false;
-  String? _email;
-  String? _password;
-  String? _phoneNumber;
-  String? _nickname;
-  String? _verificationId;
   User? _currentUser;
-
-  String? _emailError;
-  String? _passwordError;
-  String? _phoneError;
-  String? _nicknameError;
 
   @override
   void initState() {
@@ -65,7 +55,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
           PhoneVerificationScreen(
             onNext: _goToNextPage,
           ),
-          NicknameScreen(onNext: _setNickname),
+          NicknameScreen(
+            onNext: _goToNextPage,
+          ),
           BuildThankYouPage(
             onStartPressed: () {
               // TODO: Navigate to the main screen
@@ -89,64 +81,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  void _sendVerificationCode(String phoneNumber) async {
-    // Implement Firebase phone verification logic here
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: (PhoneAuthCredential credential) {},
-      verificationFailed: (FirebaseAuthException e) {},
-      codeSent: (String verificationId, int? resendToken) {
-        setState(() {
-          _verificationId = verificationId;
-        });
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
-    );
-  }
-
-  void _verifyCode(String smsCode) async {
-    if (_verificationId != null) {
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: smsCode,
-      );
-      try {
-        await FirebaseAuth.instance.signInWithCredential(credential);
-        await _goToNextPage();
-      } catch (e) {
-        print("Error verifying SMS code: $e");
-      }
-    }
-  }
-
-  void _setPhoneNumber(String phoneNumber) {
-    setState(() {
-      _phoneNumber = phoneNumber;
-      _phoneError = null;
-    });
-    _goToNextPage();
-  }
-
-  void _setNickname(String nickname) {
-    setState(() {
-      _nickname = nickname;
-      _nicknameError = null;
-    });
-    _finishSignUp();
-  }
-
   void _finishSignUp() async {
     try {
       if (_currentUser == null) {
         throw Exception('User not created');
       }
-      await _userRepository.addPhoneNumber(
-          _currentUser!.uid, _phoneNumber!, _nickname!);
       await _goToNextPage(); // Go to Thank You page
-    } catch (e) {
-      setState(() {
-        _nicknameError = '회원가입을 완료할 수 없습니다. 다시 시도해 주세요.';
-      });
-    }
+    } catch (e) {}
   }
 }

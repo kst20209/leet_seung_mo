@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/build_text_field.dart';
 
 class NicknameScreen extends StatefulWidget {
-  final Function(String) onNext;
+  final Future<void> Function() onNext;
 
   NicknameScreen({required this.onNext});
 
@@ -67,7 +67,7 @@ class _NicknameScreenState extends State<NicknameScreen> {
               ),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                  widget.onNext(_nicknameController.text);
+                  widget.onNext();
                 }
               },
             ),

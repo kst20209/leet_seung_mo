@@ -25,37 +25,6 @@ class UserRepository {
     return userCredential;
   }
 
-  Future<void> updatePhoneVerificationStatus(
-      bool isVerified, String phone) async {
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      await _firebaseService.setDocument(
-        'users',
-        currentUser.uid,
-        {
-          'isPhoneVerified': isVerified,
-          'phoneNumber': phone,
-        },
-        merge: true,
-      );
-    } else {
-      throw Exception('No user currently signed in');
-    }
-  }
-
-  Future<void> addPhoneNumber(
-      String uid, String phoneNumber, String nickname) async {
-    await _firebaseService.setDocument(
-        'users',
-        uid,
-        {
-          'phoneNumber': phoneNumber,
-          'nickname': nickname,
-          'isPhoneVerified': true,
-        },
-        merge: true);
-  }
-
   String getErrorMessage(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':
@@ -68,6 +37,47 @@ class UserRepository {
         return '이 계정은 비활성화되었습니다. 관리자에게 문의해 주세요.';
       default:
         return '계정 생성 중 오류가 발생했습니다: ${e.message}';
+    }
+  }
+
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(PhoneAuthCredential) onVerificationCompleted,
+    required Function(FirebaseAuthException) onVerificationFailed,
+    required Function(String, int?) onCodeSent,
+    required Function(String) onCodeAutoRetrievalTimeout,
+  }) async {
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: onVerificationCompleted,
+      verificationFailed: onVerificationFailed,
+      codeSent: onCodeSent,
+      codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+    );
+  }
+
+  Future<void> linkPhoneCredential(PhoneAuthCredential credential) async {
+    final user = _firebaseService.currentUser;
+    if (user != null) {
+      await user.linkWithCredential(credential);
+    } else {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: '현재 로그인된 사용자가 없습니다.',
+      );
+    }
+  }
+
+  Future<void> updatePhoneVerificationStatus(
+      bool isVerified, String phoneNumber) async {
+    final user = _firebaseService.currentUser;
+    if (user != null) {
+      await _firebaseService.updateDocument('users', user.uid, {
+        'phoneNumber': phoneNumber,
+        'isPhoneVerified': isVerified,
+      });
+    } else {
+      throw Exception('No current user found');
     }
   }
 

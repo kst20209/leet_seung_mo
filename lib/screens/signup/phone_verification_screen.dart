@@ -106,63 +106,86 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     );
   }
 
-  void _sendVerificationCode() {
+  void _sendVerificationCode() async {
     if (_formKey.currentState!.validate()) {
       String phoneNumber = _phoneController.text;
       if (!phoneNumber.startsWith('+82')) {
         phoneNumber = '+82' + phoneNumber.substring(1);
       }
 
-      FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Automatically sign in the user
-          await FirebaseAuth.instance.signInWithCredential(credential);
-          await _userRepository.updatePhoneVerificationStatus(
-              true, _phoneController.text);
-          widget.onNext();
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          setState(() {
-            _phoneError = _userRepository.getPhoneVerificationErrorMessage(e);
-          });
-          _formKey.currentState?.validate(); // Trigger validation to show error
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          setState(() {
-            _verificationId = verificationId;
-            _isCodeSent = true;
-          });
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          setState(() {
-            _verificationId = verificationId;
-          });
-        },
-      );
+      try {
+        await _userRepository.verifyPhoneNumber(
+          phoneNumber: phoneNumber,
+          onVerificationCompleted: _onVerificationCompleted,
+          onVerificationFailed: _onVerificationFailed,
+          onCodeSent: _onCodeSent,
+          onCodeAutoRetrievalTimeout: _onCodeAutoRetrievalTimeout,
+        );
+      } catch (e) {
+        print("Error sending verification code: $e");
+        setState(() {
+          _phoneError = "인증코드 전송 중 오류가 발생했습니다.";
+        });
+      }
     }
   }
 
-  void _verifyCode() {
+  void _onVerificationCompleted(PhoneAuthCredential credential) async {
+    try {
+      await _linkPhoneCredential(credential);
+    } catch (e) {
+      print("Error in automatic verification: $e");
+    }
+  }
+
+  void _onVerificationFailed(FirebaseAuthException e) {
+    setState(() {
+      _phoneError = _userRepository.getPhoneVerificationErrorMessage(e);
+    });
+    _formKey.currentState?.validate();
+  }
+
+  void _onCodeSent(String verificationId, int? resendToken) {
+    setState(() {
+      _verificationId = verificationId;
+      _isCodeSent = true;
+    });
+  }
+
+  void _onCodeAutoRetrievalTimeout(String verificationId) {
+    setState(() {
+      _verificationId = verificationId;
+    });
+  }
+
+  void _verifyCode() async {
     if (_formKey.currentState!.validate()) {
       if (_verificationId != null) {
         PhoneAuthCredential credential = PhoneAuthProvider.credential(
           verificationId: _verificationId!,
           smsCode: _codeController.text,
         );
-        FirebaseAuth.instance
-            .signInWithCredential(credential)
-            .then((userCredential) {
-          _userRepository.updatePhoneVerificationStatus(
-              true, _phoneController.text);
-          widget.onNext();
-        }).catchError((e) {
-          setState(() {
-            _codeError = e.message;
-          });
-          _formKey.currentState?.validate(); // Trigger validation to show error
-        });
+        await _linkPhoneCredential(credential);
       }
+    }
+  }
+
+  Future<void> _linkPhoneCredential(PhoneAuthCredential credential) async {
+    try {
+      await _userRepository.linkPhoneCredential(credential);
+      await _userRepository.updatePhoneVerificationStatus(
+          true, _phoneController.text);
+      widget.onNext();
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _codeError = _userRepository.getPhoneVerificationErrorMessage(e);
+      });
+      _formKey.currentState?.validate();
+    } catch (e) {
+      print("Error linking phone credential: $e");
+      setState(() {
+        _codeError = "인증 과정에서 오류가 발생했습니다.";
+      });
     }
   }
 }
