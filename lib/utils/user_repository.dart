@@ -25,6 +25,24 @@ class UserRepository {
     return userCredential;
   }
 
+  Future<void> updatePhoneVerificationStatus(
+      bool isVerified, String phone) async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      await _firebaseService.setDocument(
+        'users',
+        currentUser.uid,
+        {
+          'isPhoneVerified': isVerified,
+          'phoneNumber': phone,
+        },
+        merge: true,
+      );
+    } else {
+      throw Exception('No user currently signed in');
+    }
+  }
+
   Future<void> addPhoneNumber(
       String uid, String phoneNumber, String nickname) async {
     await _firebaseService.setDocument(
@@ -50,6 +68,23 @@ class UserRepository {
         return '이 계정은 비활성화되었습니다. 관리자에게 문의해 주세요.';
       default:
         return '계정 생성 중 오류가 발생했습니다: ${e.message}';
+    }
+  }
+
+  String getPhoneVerificationErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-phone-number':
+        return '전화번호 형식이 올바르지 않습니다.';
+      case 'too-many-requests':
+        return '인증 요청이 너무 많습니다.';
+      case 'quota-exceeded':
+        return '인증 요청 한도를 초과했습니다.';
+      case 'user-disabled':
+        return '이 계정은 비활성화되었습니다.';
+      case 'session-expired':
+        return '인증 세션이 만료되었습니다.';
+      default:
+        return '전화번호 인증 중 오류가 발생했습니다: ${e.message}';
     }
   }
 

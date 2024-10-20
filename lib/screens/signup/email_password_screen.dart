@@ -21,7 +21,6 @@ class _EmailPasswordScreenState extends State<EmailPasswordScreen> {
   final UserRepository _userRepository = UserRepository(FirebaseService());
 
   String? _emailError;
-  String? _passwordError;
 
   bool isPasswordStrong(String password) {
     if (password.length < 6 || password.length > 15) return false;

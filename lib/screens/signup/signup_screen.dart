@@ -63,9 +63,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             onNext: _goToNextPage,
           ),
           PhoneVerificationScreen(
-            onSendCode: _sendVerificationCode,
-            onVerifyCode: _verifyCode,
-            onNext: _setPhoneNumber,
+            onNext: _goToNextPage,
           ),
           NicknameScreen(onNext: _setNickname),
           BuildThankYouPage(

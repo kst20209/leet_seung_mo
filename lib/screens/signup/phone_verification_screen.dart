@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/build_text_field.dart';
+import '../../utils/firebase_service.dart';
+import '../../utils/user_repository.dart';
 
 class PhoneVerificationScreen extends StatefulWidget {
-  final Function(String) onSendCode;
-  final Function(String) onVerifyCode;
-  final Function(String) onNext;
+  final Future<void> Function() onNext;
 
-  PhoneVerificationScreen({
-    required this.onSendCode,
-    required this.onVerifyCode,
-    required this.onNext,
-  });
+  PhoneVerificationScreen({required this.onNext});
 
   @override
   _PhoneVerificationScreenState createState() =>
@@ -21,9 +18,12 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _codeController = TextEditingController();
+  final UserRepository _userRepository = UserRepository(FirebaseService());
+
   String? _phoneError;
   String? _codeError;
   bool _isCodeSent = false;
+  String? _verificationId;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,6 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                           if (value == null || value.isEmpty) {
                             return '휴대폰 번호를 입력해주세요';
                           }
-                          // You can add more phone number validation here
                           return null;
                         },
                       ),
@@ -96,7 +95,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               onPressed: _isCodeSent
                   ? () {
                       if (_formKey.currentState!.validate()) {
-                        widget.onNext(_phoneController.text);
+                        widget.onNext();
                       }
                     }
                   : null,
@@ -109,16 +108,61 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
 
   void _sendVerificationCode() {
     if (_formKey.currentState!.validate()) {
-      widget.onSendCode(_phoneController.text);
-      setState(() {
-        _isCodeSent = true;
-      });
+      String phoneNumber = _phoneController.text;
+      if (!phoneNumber.startsWith('+82')) {
+        phoneNumber = '+82' + phoneNumber.substring(1);
+      }
+
+      FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Automatically sign in the user
+          await FirebaseAuth.instance.signInWithCredential(credential);
+          await _userRepository.updatePhoneVerificationStatus(
+              true, _phoneController.text);
+          widget.onNext();
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() {
+            _phoneError = _userRepository.getPhoneVerificationErrorMessage(e);
+          });
+          _formKey.currentState?.validate(); // Trigger validation to show error
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          setState(() {
+            _verificationId = verificationId;
+            _isCodeSent = true;
+          });
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          setState(() {
+            _verificationId = verificationId;
+          });
+        },
+      );
     }
   }
 
   void _verifyCode() {
     if (_formKey.currentState!.validate()) {
-      widget.onVerifyCode(_codeController.text);
+      if (_verificationId != null) {
+        PhoneAuthCredential credential = PhoneAuthProvider.credential(
+          verificationId: _verificationId!,
+          smsCode: _codeController.text,
+        );
+        FirebaseAuth.instance
+            .signInWithCredential(credential)
+            .then((userCredential) {
+          _userRepository.updatePhoneVerificationStatus(
+              true, _phoneController.text);
+          widget.onNext();
+        }).catchError((e) {
+          setState(() {
+            _codeError = e.message;
+          });
+          _formKey.currentState?.validate(); // Trigger validation to show error
+        });
+      }
     }
   }
 }
