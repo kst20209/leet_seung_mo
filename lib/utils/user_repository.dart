@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class UserRepository {
   final FirebaseService _firebaseService;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   UserRepository(this._firebaseService);
 
@@ -108,5 +109,23 @@ class UserRepository {
       return await getUser(currentUser.uid);
     }
     throw Exception('No user currently signed in');
+  }
+
+  Future<bool> isNicknameAvailable(String nickname) async {
+    try {
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('users')
+          .where('nickname', isEqualTo: nickname)
+          .limit(1)
+          .get();
+      return querySnapshot.docs.isEmpty;
+    } catch (e) {
+      print('Error checking nickname availability: $e');
+      return false;
+    }
+  }
+
+  Future<void> updateUserInfo(String uid, Map<String, dynamic> userInfo) async {
+    await _firebaseService.updateDocument('users', uid, userInfo);
   }
 }

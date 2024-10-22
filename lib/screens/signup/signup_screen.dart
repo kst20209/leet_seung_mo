@@ -60,7 +60,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           BuildThankYouPage(
             onStartPressed: () {
-              // TODO: Navigate to the main screen
               print('Navigate to main screen');
             },
           ),
@@ -79,14 +78,5 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _currentPage++;
       });
     }
-  }
-
-  void _finishSignUp() async {
-    try {
-      if (_currentUser == null) {
-        throw Exception('User not created');
-      }
-      await _goToNextPage(); // Go to Thank You page
-    } catch (e) {}
   }
 }

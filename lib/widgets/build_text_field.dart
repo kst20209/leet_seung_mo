@@ -71,18 +71,49 @@ class BuildTextFieldWithButton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextFormField(
-                controller: controller,
-                decoration: InputDecoration(
-                  labelText: label,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  filled: true,
-                  fillColor: Colors.brown[50],
-                ),
-                validator: (value) {
-                  if (error != null) return error;
-                  return validator?.call(value);
+              child: FormField<String>(
+                initialValue: controller.text,
+                validator: validator,
+                builder: (FormFieldState<String> state) {
+                  final isValid = state.value != null &&
+                      state.value!.isNotEmpty &&
+                      state.errorText == '사용 가능한 닉네임입니다';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: controller,
+                        decoration: InputDecoration(
+                          labelText: label,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          filled: true,
+                          fillColor: Colors.brown[50],
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: isValid ? Color(0xFF6FB077) : Colors.brown,
+                            ),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          state.didChange(value);
+                        },
+                      ),
+                      if (state.errorText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0, left: 12.0),
+                          child: Text(
+                            state.errorText!,
+                            style: TextStyle(
+                              color:
+                                  isValid ? Color(0xFF6FB077) : Colors.red[700],
+                              fontSize: 12.0,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
                 },
               ),
             ),
