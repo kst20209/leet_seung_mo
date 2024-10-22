@@ -78,6 +78,7 @@ class _EmailPasswordScreenState extends State<EmailPasswordScreen> {
                       BuildTextField(
                         context: context,
                         controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
                         label: '이메일',
                         validator: (value) {
                           if (value == null || value.isEmpty) {

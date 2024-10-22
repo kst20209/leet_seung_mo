@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import '../../widgets/build_text_field.dart';
 import '../../utils/firebase_service.dart';
 import '../../utils/user_repository.dart';
@@ -24,6 +25,156 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   String? _codeError;
   bool _isCodeSent = false;
   String? _verificationId;
+  Timer? _timer;
+  int _timeLeft = 60; // 1분으로 유지
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() {
+      _timeLeft = 60;
+    });
+
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_timeLeft > 0) {
+        setState(() {
+          _timeLeft--;
+        });
+      } else {
+        _timer?.cancel();
+        setState(() {
+          _verificationId = null;
+          _isCodeSent = false;
+          _codeError = '인증 시간이 만료되었습니다.';
+        });
+        _formKey.currentState?.validate();
+      }
+    });
+  }
+
+  String get _formatTime {
+    return '${(_timeLeft ~/ 60).toString().padLeft(2, '0')}:${(_timeLeft % 60).toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _sendVerificationCode() async {
+    setState(() {
+      _phoneError = null;
+    });
+
+    try {
+      String phoneNumber = _phoneController.text.trim();
+      if (phoneNumber.isEmpty) {
+        setState(() {
+          _phoneError = '휴대폰 번호를 입력해주세요';
+        });
+        _formKey.currentState?.validate();
+        return;
+      }
+
+      if (!phoneNumber.startsWith('+82')) {
+        phoneNumber = '+82' + phoneNumber.substring(1);
+      }
+
+      bool isAvailable =
+          await _userRepository.isPhoneNumberAvailable(phoneNumber);
+      if (!isAvailable) {
+        setState(() {
+          _phoneError = '이미 사용 중인 전화번호입니다';
+        });
+        _formKey.currentState?.validate();
+        return;
+      }
+
+      await _userRepository.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        onVerificationCompleted: _onVerificationCompleted,
+        onVerificationFailed: _onVerificationFailed,
+        onCodeSent: _onCodeSent,
+        onCodeAutoRetrievalTimeout: _onCodeAutoRetrievalTimeout,
+      );
+    } catch (e) {
+      setState(() {
+        _phoneError = e.toString();
+      });
+      _formKey.currentState?.validate();
+    }
+  }
+
+  void _onVerificationCompleted(PhoneAuthCredential credential) async {
+    try {
+      await _userRepository.linkPhoneCredential(credential);
+      _timer?.cancel();
+      await widget.onNext();
+    } catch (e) {
+      setState(() {
+        _codeError = '인증에 실패했습니다. 다시 시도해주세요.';
+      });
+      _formKey.currentState?.validate();
+    }
+  }
+
+  void _onVerificationFailed(FirebaseAuthException e) {
+    setState(() {
+      _phoneError = _userRepository.getPhoneVerificationErrorMessage(e);
+    });
+    _formKey.currentState?.validate();
+  }
+
+  void _onCodeSent(String verificationId, int? resendToken) {
+    setState(() {
+      _verificationId = verificationId;
+      _isCodeSent = true;
+    });
+    _startTimer();
+  }
+
+  void _onCodeAutoRetrievalTimeout(String verificationId) {
+    if (mounted && !_isCodeSent) {
+      setState(() {
+        _verificationId = verificationId;
+      });
+    }
+  }
+
+  Future<void> _verifyCode() async {
+    setState(() {
+      _codeError = null;
+    });
+
+    try {
+      if (_verificationId == null || _codeController.text.isEmpty) {
+        setState(() {
+          _codeError = '인증번호를 입력해주세요';
+        });
+        _formKey.currentState?.validate();
+        return;
+      }
+
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: _codeController.text,
+      );
+
+      await _userRepository.linkPhoneCredential(credential);
+      _timer?.cancel();
+      await widget.onNext();
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _codeError = _userRepository.getPhoneVerificationErrorMessage(e);
+      });
+      _formKey.currentState?.validate();
+    } catch (e) {
+      setState(() {
+        _codeError = e is Exception ? e.toString() : '인증에 실패했습니다';
+      });
+      _formKey.currentState?.validate();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,33 +199,22 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                         context: context,
                         controller: _phoneController,
                         label: '휴대폰 번호',
-                        error: _phoneError,
                         buttonText: '인증번호 전송',
                         onPressed: _sendVerificationCode,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '휴대폰 번호를 입력해주세요';
-                          }
-                          return null;
-                        },
+                        validator: (value) => _phoneError,
+                        keyboardType: TextInputType.phone,
                       ),
                       SizedBox(height: 16),
-                      if (_isCodeSent) ...[
+                      if (_isCodeSent)
                         BuildTextFieldWithButton(
                           context: context,
                           controller: _codeController,
-                          label: '인증번호',
-                          error: _codeError,
+                          label: '인증번호 ($_formatTime)',
                           buttonText: '확인',
                           onPressed: _verifyCode,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return '인증번호를 입력해주세요';
-                            }
-                            return null;
-                          },
+                          validator: (value) => _codeError,
+                          keyboardType: TextInputType.number,
                         ),
-                      ],
                     ],
                   ),
                 ),
@@ -90,102 +230,14 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                 backgroundColor: Theme.of(context).primaryColor,
                 padding: EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              onPressed: _isCodeSent
-                  ? () {
-                      if (_formKey.currentState!.validate()) {
-                        widget.onNext();
-                      }
-                    }
-                  : null,
+              onPressed: _isCodeSent ? widget.onNext : null,
             ),
           ),
         ],
       ),
     );
-  }
-
-  void _sendVerificationCode() async {
-    if (_formKey.currentState!.validate()) {
-      String phoneNumber = _phoneController.text;
-      if (!phoneNumber.startsWith('+82')) {
-        phoneNumber = '+82' + phoneNumber.substring(1);
-      }
-
-      try {
-        await _userRepository.verifyPhoneNumber(
-          phoneNumber: phoneNumber,
-          onVerificationCompleted: _onVerificationCompleted,
-          onVerificationFailed: _onVerificationFailed,
-          onCodeSent: _onCodeSent,
-          onCodeAutoRetrievalTimeout: _onCodeAutoRetrievalTimeout,
-        );
-      } catch (e) {
-        print("Error sending verification code: $e");
-        setState(() {
-          _phoneError = "인증코드 전송 중 오류가 발생했습니다.";
-        });
-      }
-    }
-  }
-
-  void _onVerificationCompleted(PhoneAuthCredential credential) async {
-    try {
-      await _linkPhoneCredential(credential);
-    } catch (e) {
-      print("Error in automatic verification: $e");
-    }
-  }
-
-  void _onVerificationFailed(FirebaseAuthException e) {
-    setState(() {
-      _phoneError = _userRepository.getPhoneVerificationErrorMessage(e);
-    });
-    _formKey.currentState?.validate();
-  }
-
-  void _onCodeSent(String verificationId, int? resendToken) {
-    setState(() {
-      _verificationId = verificationId;
-      _isCodeSent = true;
-    });
-  }
-
-  void _onCodeAutoRetrievalTimeout(String verificationId) {
-    setState(() {
-      _verificationId = verificationId;
-    });
-  }
-
-  void _verifyCode() async {
-    if (_formKey.currentState!.validate()) {
-      if (_verificationId != null) {
-        PhoneAuthCredential credential = PhoneAuthProvider.credential(
-          verificationId: _verificationId!,
-          smsCode: _codeController.text,
-        );
-        await _linkPhoneCredential(credential);
-      }
-    }
-  }
-
-  Future<void> _linkPhoneCredential(PhoneAuthCredential credential) async {
-    try {
-      await _userRepository.linkPhoneCredential(credential);
-      await _userRepository.updatePhoneVerificationStatus(
-          true, _phoneController.text);
-      widget.onNext();
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        _codeError = _userRepository.getPhoneVerificationErrorMessage(e);
-      });
-      _formKey.currentState?.validate();
-    } catch (e) {
-      print("Error linking phone credential: $e");
-      setState(() {
-        _codeError = "인증 과정에서 오류가 발생했습니다.";
-      });
-    }
   }
 }

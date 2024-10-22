@@ -69,6 +69,33 @@ class UserRepository {
     }
   }
 
+  Future<bool> isPhoneNumberAvailable(String phoneNumber) async {
+    try {
+      // 전화번호 형식 통일
+      if (!phoneNumber.startsWith('+82')) {
+        phoneNumber = '+82' + phoneNumber.substring(1);
+      }
+
+      // Firestore에서 전화번호로 등록된 사용자 확인
+      final usersWithPhone = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .limit(1)
+          .get();
+
+      // Auth의 현재 사용자 확인
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser?.phoneNumber == phoneNumber) {
+        return false; // 현재 사용자가 이미 이 전화번호를 사용 중
+      }
+
+      return usersWithPhone.docs.isEmpty; // docs가 비어있으면 사용 가능
+    } on FirebaseException catch (e) {
+      print('Error checking phone number availability: $e');
+      throw Exception('전화번호 확인 중 오류가 발생했습니다.');
+    }
+  }
+
   Future<void> updatePhoneVerificationStatus(
       bool isVerified, String phoneNumber) async {
     final user = _firebaseService.currentUser;
@@ -84,6 +111,8 @@ class UserRepository {
 
   String getPhoneVerificationErrorMessage(FirebaseAuthException e) {
     switch (e.code) {
+      case 'credential-already-in-use':
+        return '이미 등록된 전화번호입니다.';
       case 'invalid-phone-number':
         return '전화번호 형식이 올바르지 않습니다.';
       case 'too-many-requests':
@@ -109,6 +138,25 @@ class UserRepository {
       return await getUser(currentUser.uid);
     }
     throw Exception('No user currently signed in');
+  }
+
+  Future<Map<String, dynamic>> getUserInfo(String uid) async {
+    try {
+      DocumentSnapshot userDoc =
+          await _firebaseService.getDocument('users', uid);
+      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+      // 전화번호는 Auth에서만 가져옴
+      String? phoneNumber = _firebaseService.getCurrentUserPhoneNumber();
+      if (phoneNumber != null) {
+        // 메모리에서만 임시로 사용
+        userData = {...userData, 'phoneNumber': phoneNumber};
+      }
+
+      return userData;
+    } catch (e) {
+      throw Exception('사용자 정보를 가져오는 중 오류가 발생했습니다.');
+    }
   }
 
   Future<bool> isNicknameAvailable(String nickname) async {

@@ -41,16 +41,10 @@ class _NicknameScreenState extends State<NicknameScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionTitle('닉네임'),
-                BuildTextFieldWithButton(
-                  context: context,
+                NicknameTextFieldWithButton(
                   controller: _nicknameController,
-                  label: '닉네임',
-                  buttonText: '중복 확인',
                   onPressed: _checkNicknameDuplicate,
-                  validator: (value) {
-                    final error = _validateNickname(value);
-                    return error;
-                  },
+                  isNicknameAvailable: _isNicknameAvailable,
                 ),
                 SizedBox(height: 32),
                 _buildSectionTitle('성별'),

@@ -52,6 +52,48 @@ class FirebaseService {
         email: email, password: password);
   }
 
+  Future<void> createUserDocument(
+      String uid, Map<String, dynamic> userData) async {
+    // 보안을 위해 전화번호 관련 데이터는 제외
+    final Map<String, dynamic> safeUserData = Map.from(userData)
+      ..removeWhere((key, value) => key == 'phoneNumber')
+      ..addAll({
+        'createdAt': FieldValue.serverTimestamp(),
+        'isPhoneVerified': true,
+        'phoneVerifiedAt': FieldValue.serverTimestamp(),
+      });
+
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .set(safeUserData, SetOptions(merge: true));
+  }
+
+  Future<void> updateUserDocument(
+      String uid, Map<String, dynamic> userData) async {
+    // 보안을 위해 전화번호 관련 데이터는 제외
+    final Map<String, dynamic> safeUserData = Map.from(userData)
+      ..removeWhere((key, value) => key == 'phoneNumber');
+
+    await _firestore.collection('users').doc(uid).update(safeUserData);
+  }
+
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required PhoneVerificationCompleted verificationCompleted,
+    required PhoneVerificationFailed verificationFailed,
+    required PhoneCodeSent codeSent,
+    required PhoneCodeAutoRetrievalTimeout codeAutoRetrievalTimeout,
+  }) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: verificationCompleted,
+      verificationFailed: verificationFailed,
+      codeSent: codeSent,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+    );
+  }
+
   Future<void> sendEmailVerification() async {
     await _auth.currentUser?.sendEmailVerification();
   }
@@ -61,4 +103,10 @@ class FirebaseService {
   }
 
   User? get currentUser => _auth.currentUser;
+
+  String? getCurrentUserPhoneNumber() {
+    return _auth.currentUser?.phoneNumber;
+  }
+
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 }
