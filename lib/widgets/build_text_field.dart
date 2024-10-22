@@ -115,24 +115,19 @@ class BuildTextFieldWithButton extends StatelessWidget {
 }
 
 // New widget specifically for Nickname text field
-class NicknameTextFieldWithButton extends StatefulWidget {
+class NicknameTextFieldWithButton extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onPressed;
+  final FormFieldValidator<String>? validator;
   final bool isNicknameAvailable;
 
   NicknameTextFieldWithButton({
     required this.controller,
     required this.onPressed,
+    this.validator,
     this.isNicknameAvailable = false,
   });
 
-  @override
-  _NicknameTextFieldWithButtonState createState() =>
-      _NicknameTextFieldWithButtonState();
-}
-
-class _NicknameTextFieldWithButtonState
-    extends State<NicknameTextFieldWithButton> {
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -142,7 +137,8 @@ class _NicknameTextFieldWithButtonState
           child: Column(
             children: [
               TextFormField(
-                controller: widget.controller,
+                controller: controller,
+                validator: validator,
                 decoration: InputDecoration(
                   labelText: '닉네임',
                   border: OutlineInputBorder(
@@ -152,27 +148,26 @@ class _NicknameTextFieldWithButtonState
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
-                      color: widget.isNicknameAvailable
+                      color: isNicknameAvailable
                           ? Color(0xFF6FB077)
                           : Colors.brown,
                     ),
                   ),
-                ),
-                onChanged: (value) {
-                  setState(() {});
-                },
-              ),
-              if (!widget.isNicknameAvailable)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0, left: 12.0),
-                  child: Text(
-                    '중복된 닉네임입니다. 다른 닉네임을 입력해주세요.',
-                    style: TextStyle(
-                      color: Colors.red[700],
-                      fontSize: 12.0,
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: isNicknameAvailable
+                          ? Color(0xFF6FB077)
+                          : Colors.brown,
                     ),
                   ),
+                  helperText: isNicknameAvailable ? '사용 가능한 닉네임입니다' : null,
+                  helperStyle: TextStyle(color: Color(0xFF6FB077)),
+                  errorStyle: TextStyle(
+                    color: Colors.red[700],
+                  ),
                 ),
+              ),
             ],
           ),
         ),
@@ -186,7 +181,7 @@ class _NicknameTextFieldWithButtonState
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          onPressed: widget.onPressed,
+          onPressed: onPressed,
         ),
       ],
     );
