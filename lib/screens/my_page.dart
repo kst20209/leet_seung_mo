@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import 'dart:convert';
 
 class MyPage extends StatefulWidget {
@@ -34,15 +35,16 @@ class _MyPageState extends State<MyPage> {
 
   Future<void> _handleLogout(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signOut();
-      // StreamBuilder가 자동으로 로그인 화면으로 이동시킬 것입니다
+      await context.read<AppAuthProvider>().signOut();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('로그아웃 중 오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('로그아웃 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -67,45 +69,49 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserInfo() {
-    final user = FirebaseAuth.instance.currentUser;
+    return Consumer<AppAuthProvider>(
+      builder: (context, authProvider, _) {
+        final user = authProvider.user;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              '${user?.phoneNumber ?? userData['nickname']}',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 20),
-            ElevatedButton(
-              onPressed: () => _handleLogout(context),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${user?.phoneNumber ?? userData['nickname']}',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-              ),
-              child: const Text('로그아웃'),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () => _handleLogout(context),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                  child: const Text('로그아웃'),
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${userData['points']} P',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Text('충전하기'),
+                ),
+              ],
             ),
           ],
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${userData['points']} P',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            ElevatedButton(
-              onPressed: () {},
-              child: Text('충전하기'),
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/problem_solving_page.dart' as problem_solving;
 import 'screens/my_page.dart';
@@ -11,13 +10,20 @@ import 'screens/problem_set_list_page.dart';
 import 'screens/problem_list_page.dart';
 import 'models/models.dart';
 import 'screens/login_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AppAuthProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -99,7 +105,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (BuildContext context) => AuthWrapper(),
+        '/': (BuildContext context) => _handleAuthState(context),
         '/main': (context) => const PopScope(
               canPop: false, // 뒤로가기 버튼 비활성화
               child: const MainScreen(),
@@ -123,32 +129,20 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasData) {
-          // 로그인된 상태일 때 /main 라우트로 이동
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, '/main');
-          });
-          return Container(); // 네비게이션 처리 중 빈 화면 표시
-        }
-
-        return LoginScreen(
-          onLoginSuccess: () {
-            // No need to navigate manually as StreamBuilder will handle it
-          },
-        );
-      },
-    );
-  }
+Widget _handleAuthState(BuildContext context) {
+  return Consumer<AppAuthProvider>(
+    builder: (context, auth, _) {
+      print(auth.status);
+      switch (auth.status) {
+        case AuthStatus.uninitialized:
+          return const Center(child: CircularProgressIndicator());
+        case AuthStatus.authenticated:
+          return const MainScreen();
+        case AuthStatus.unauthenticated:
+          return LoginScreen();
+      }
+    },
+  );
 }
 
 // MainScreen

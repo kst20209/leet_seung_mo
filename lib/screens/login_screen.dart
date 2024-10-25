@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../../utils/firebase_service.dart';
 import '../../utils/user_repository.dart';
 import 'signup/signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  final VoidCallback onLoginSuccess;
-
-  const LoginScreen({Key? key, required this.onLoginSuccess}) : super(key: key);
-
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -19,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _codeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final UserRepository _userRepository = UserRepository(FirebaseService());
+  late AppAuthProvider _authProvider;
 
   String? _verificationId;
   bool _codeSent = false;
@@ -36,66 +34,47 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _verifyPhone() async {
-    setState(() {
-      _error = null;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _authProvider = Provider.of<AppAuthProvider>(context, listen: false);
+    _authProvider.setLoginSuccessCallback((user) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${user.phoneNumber} 님으로 로그인되었습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     });
+  }
 
-    if (_phoneController.text.isEmpty) {
-      setState(() {
-        _error = '전화번호를 입력해주세요';
-      });
-      return;
-    }
-
+  Future<void> _verifyPhone() async {
+    final authProvider = context.read<AppAuthProvider>();
     String phoneNumber = _phoneController.text;
     if (!phoneNumber.startsWith('+82')) {
       phoneNumber = '+82' + phoneNumber.substring(1);
     }
 
-    try {
-      await _userRepository.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        onVerificationCompleted: (PhoneAuthCredential credential) async {
-          await _signInWithCredential(credential);
-        },
-        onVerificationFailed: (FirebaseAuthException e) {
-          setState(() {
-            _error = _userRepository.getPhoneVerificationErrorMessage(e);
-          });
-        },
-        onCodeSent: (String verificationId, int? resendToken) {
-          setState(() {
-            _verificationId = verificationId;
-            _codeSent = true;
-          });
-        },
-        onCodeAutoRetrievalTimeout: (String verificationId) {
-          setState(() {
-            _verificationId = verificationId;
-          });
-        },
-      );
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
-    }
-  }
-
-  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
-    try {
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        _showSuccessMessage(user);
-        widget.onLoginSuccess();
-      }
-    } catch (e) {
-      setState(() {
-        _error = '로그인에 실패했습니다: ${e.toString()}';
-      });
-    }
+    await authProvider.verifyPhone(
+      phoneNumber: phoneNumber,
+      onVerificationCompleted: (credential) async {
+        // Auto verification completed
+      },
+      onCodeSent: (verificationId) {
+        setState(() {
+          _verificationId = verificationId;
+          _codeSent = true;
+          _error = null;
+        });
+      },
+      onError: (error) {
+        setState(() {
+          _error = error;
+        });
+      },
+    );
   }
 
   Future<void> _verifyCode() async {
@@ -106,29 +85,25 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    try {
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: _codeController.text,
-      );
-      await _signInWithCredential(credential);
-    } catch (e) {
+    final authProvider = context.read<AppAuthProvider>();
+    final success = await authProvider.verifyCode(
+      _verificationId!,
+      _codeController.text,
+    );
+
+    if (!success && mounted) {
       setState(() {
-        _error = '인증에 실패했습니다: ${e.toString()}';
+        _error = authProvider.error;
       });
     }
   }
 
-  void _showSuccessMessage(User user) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${user.phoneNumber} 님으로 로그인되었습니다'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  @override
+  void dispose() {
+    _authProvider.removeLoginSuccessCallback();
+    super.dispose();
   }
 
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
