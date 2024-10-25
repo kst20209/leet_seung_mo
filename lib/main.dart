@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/problem_solving_page.dart' as problem_solving;
 import 'screens/my_page.dart';
@@ -9,7 +10,7 @@ import 'screens/my_problem_page.dart' as my_problem;
 import 'screens/problem_set_list_page.dart';
 import 'screens/problem_list_page.dart';
 import 'models/models.dart';
-import 'screens/signup/signup_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,8 +99,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        // routes 수정
-        '/': (context) => const MainScreen(),
+        '/': (BuildContext context) => AuthWrapper(),
+        '/main': (context) => const PopScope(
+              canPop: false, // 뒤로가기 버튼 비활성화
+              child: const MainScreen(),
+            ),
         '/subject_list': (context) => const ProblemSetListPage(),
         '/problem_list': (context) =>
             const ProblemListPage(title: '', items: []),
@@ -114,6 +118,34 @@ class MyApp extends StatelessWidget {
           );
         }
         return null;
+      },
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasData) {
+          // 로그인된 상태일 때 /main 라우트로 이동
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/main');
+          });
+          return Container(); // 네비게이션 처리 중 빈 화면 표시
+        }
+
+        return LoginScreen(
+          onLoginSuccess: () {
+            // No need to navigate manually as StreamBuilder will handle it
+          },
+        );
       },
     );
   }
@@ -134,7 +166,7 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     ProblemShopPage(),
     my_problem.MyProblemPage(),
-    SignUpScreen(),
+    MyPage(),
   ];
 
   void _onItemTapped(int index) {
