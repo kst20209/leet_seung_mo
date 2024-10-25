@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 
 class MyPage extends StatefulWidget {
@@ -31,6 +32,20 @@ class _MyPageState extends State<MyPage> {
     return json.decode(jsonString);
   }
 
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // StreamBuilder가 자동으로 로그인 화면으로 이동시킬 것입니다
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('로그아웃 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -52,6 +67,8 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserInfo() {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -59,10 +76,20 @@ class _MyPageState extends State<MyPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${userData['nickname']}',
+              '${user?.phoneNumber ?? userData['nickname']}',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            Text('UID: ${userData['uid']}'),
+            const SizedBox(width: 20),
+            ElevatedButton(
+              onPressed: () => _handleLogout(context),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
+              child: const Text('로그아웃'),
+            ),
           ],
         ),
         Column(
