@@ -8,6 +8,8 @@ enum PointTransactionType {
   adjustment, // 관리자 조정
 }
 
+enum TransactionStatus { pending, completed, failed }
+
 class PointTransaction {
   final String userId;
   final int points;
@@ -15,6 +17,7 @@ class PointTransaction {
   final PointTransactionType type;
   final String reason;
   final Map<String, dynamic> metadata;
+  final TransactionStatus status;
 
   PointTransaction({
     required this.userId,
@@ -23,6 +26,7 @@ class PointTransaction {
     required this.type,
     required this.reason,
     this.metadata = const {},
+    this.status = TransactionStatus.pending,
   });
 
   Map<String, dynamic> toJson() => {
@@ -33,6 +37,7 @@ class PointTransaction {
         'reason': reason,
         'metadata': metadata,
         'timestamp': FieldValue.serverTimestamp(),
+        'status': status.toString(),
       };
 }
 

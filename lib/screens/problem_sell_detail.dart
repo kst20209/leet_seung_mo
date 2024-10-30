@@ -1,12 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/widgets/tag_chip.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
+import '../providers/auth_provider.dart';
+import '../providers/user_data_provider.dart';
 import '../utils/custom_network_image.dart';
+import '../utils/problem_purchase_service.dart';
 
-class ProblemSellDetail extends StatelessWidget {
+class ProblemSellDetail extends StatefulWidget {
   final ProblemSet problemSet;
-
   const ProblemSellDetail({super.key, required this.problemSet});
+
+  @override
+  State<ProblemSellDetail> createState() => _ProblemSellDetailState();
+}
+
+class _ProblemSellDetailState extends State<ProblemSellDetail> {
+  final ProblemSetPurchaseService _purchaseService =
+      ProblemSetPurchaseService();
+  bool _isPurchasing = false;
+
+  Future<void> _purchaseProblemSet() async {
+    final authProvider = context.read<AppAuthProvider>();
+    final userDataProvider = context.read<UserDataProvider>();
+
+    if (authProvider.user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그인이 필요합니다.')),
+      );
+      return;
+    }
+
+    setState(() => _isPurchasing = true);
+
+    try {
+      await _purchaseService.purchaseProblemSet(
+        userId: authProvider.user!.uid,
+        problemSetId: widget.problemSet.id,
+        problemSetTitle: widget.problemSet.title,
+        price: widget.problemSet.price,
+      );
+
+      // UI 업데이트를 위해 UserDataProvider 새로고침
+      await userDataProvider.refreshUserData(authProvider.user!.uid);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('문제꾸러미 구매가 완료되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context); // 구매 완료 후 이전 화면으로 돌아가기
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isPurchasing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +77,7 @@ class ProblemSellDetail extends StatelessWidget {
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: HeroImage(imageUrl: problemSet.imageUrl),
+              background: HeroImage(imageUrl: widget.problemSet.imageUrl),
             ),
           ),
           SliverToBoxAdapter(
@@ -28,19 +87,19 @@ class ProblemSellDetail extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    problemSet.title,
+                    widget.problemSet.title,
                     style: Theme.of(context).textTheme.displayMedium,
                   ),
                   const SizedBox(height: 8),
-                  TagList(tags: problemSet.tags),
+                  TagList(tags: widget.problemSet.tags),
                   const SizedBox(height: 16),
                   Text(
-                    '총 문제 수: ${problemSet.totalProblems}',
+                    '총 문제 수: ${widget.problemSet.totalProblems}',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    problemSet.description,
+                    widget.problemSet.description,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 24),
@@ -48,12 +107,30 @@ class ProblemSellDetail extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '가격: ${problemSet.price}P',
+                        '가격: ${widget.problemSet.price}P',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
-                      BuyButton(onPressed: () {
-                        // 구매 로직 구현
-                      }),
+                      ElevatedButton(
+                        onPressed: _isPurchasing ? null : _purchaseProblemSet,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          textStyle: const TextStyle(fontSize: 18),
+                        ),
+                        child: _isPurchasing
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Text('구매하기'),
+                      ),
                     ],
                   ),
                 ],
@@ -94,25 +171,6 @@ class TagList extends StatelessWidget {
       spacing: 8,
       runSpacing: 4,
       children: tags.map((tag) => TagChip(label: tag)).toList(),
-    );
-  }
-}
-
-class BuyButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const BuyButton({super.key, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        textStyle: const TextStyle(fontSize: 18),
-      ),
-      child: const Text('구매하기'),
     );
   }
 }
