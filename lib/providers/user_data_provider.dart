@@ -41,6 +41,11 @@ class UserDataProvider with ChangeNotifier {
     }
   }
 
+  // 데이터 새로고침
+  Future<void> refreshUserData(String uid) async {
+    return loadUserData(uid);
+  }
+
   // 포인트 사용
   Future<void> usePoints(String uid, int amount, String reason) async {
     if (points < amount) {

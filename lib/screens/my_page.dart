@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import 'dart:convert';
 
 import '../providers/user_data_provider.dart';
+import 'purchase_point_page.dart';
 
 class MyPage extends StatefulWidget {
   @override
@@ -52,19 +53,25 @@ class _MyPageState extends State<MyPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildUserInfo(),
-            Divider(height: 32),
-            _buildLearningStats(),
-            _buildLearningCalendar(),
-            Divider(height: 32),
-            _buildSettingsList(context),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('마이페이지'),
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildUserInfo(),
+              Divider(height: 32),
+              _buildLearningStats(),
+              _buildLearningCalendar(),
+              Divider(height: 32),
+              _buildSettingsList(context),
+            ],
+          ),
         ),
       ),
     );
@@ -100,11 +107,18 @@ class _MyPageState extends State<MyPage> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${userData['points']} P',
+                  '${userDataProvider.points} P',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PurchasePointPage(),
+                      ),
+                    );
+                  },
                   child: Text('충전하기'),
                 ),
               ],
