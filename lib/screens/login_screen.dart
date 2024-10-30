@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../../utils/firebase_service.dart';
-import '../../utils/user_repository.dart';
+import '../providers/user_data_provider.dart';
 import 'signup/signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,7 +14,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
   final _codeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final UserRepository _userRepository = UserRepository(FirebaseService());
   late AppAuthProvider _authProvider;
 
   String? _verificationId;
@@ -38,11 +36,14 @@ class _LoginScreenState extends State<LoginScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _authProvider = Provider.of<AppAuthProvider>(context, listen: false);
+    final userDataProvider =
+        Provider.of<UserDataProvider>(context, listen: false);
     _authProvider.setLoginSuccessCallback((user) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${user.phoneNumber} 님으로 로그인되었습니다'),
+            content:
+                Text('${userDataProvider.nickname ?? 'Guest'} 님으로 로그인되었습니다'),
             duration: Duration(seconds: 2),
           ),
         );

@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'utils/firebase_service.dart';
+
+// providers
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
+import 'providers/user_data_provider.dart';
+
+// screens
 import 'screens/problem_solving_page.dart' as problem_solving;
 import 'screens/my_page.dart';
 import 'screens/home_screen.dart';
@@ -8,19 +16,24 @@ import 'screens/problem_shop_page.dart';
 import 'screens/my_problem_page.dart' as my_problem;
 import 'screens/problem_set_list_page.dart';
 import 'screens/problem_list_page.dart';
-import 'models/models.dart';
 import 'screens/login_screen.dart';
-import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
+
+// models
+import 'models/models.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  final firebaseService = FirebaseService();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppAuthProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppAuthProvider()),
+        ChangeNotifierProvider(
+            create: (_) => UserDataProvider(firebaseService)),
+      ],
       child: const MyApp(),
     ),
   );
@@ -132,7 +145,13 @@ class MyApp extends StatelessWidget {
 Widget _handleAuthState(BuildContext context) {
   return Consumer<AppAuthProvider>(
     builder: (context, auth, _) {
-      print(auth.status);
+      if (auth.status == AuthStatus.authenticated && auth.user != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Provider.of<UserDataProvider>(context, listen: false)
+              .loadUserData(auth.user!.uid);
+        });
+      }
+
       switch (auth.status) {
         case AuthStatus.uninitialized:
           return const Center(child: CircularProgressIndicator());

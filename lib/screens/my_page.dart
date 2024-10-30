@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'dart:convert';
 
+import '../providers/user_data_provider.dart';
+
 class MyPage extends StatefulWidget {
   @override
   _MyPageState createState() => _MyPageState();
@@ -69,10 +71,8 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserInfo() {
-    return Consumer<AppAuthProvider>(
-      builder: (context, authProvider, _) {
-        final user = authProvider.user;
-
+    return Consumer2<AppAuthProvider, UserDataProvider>(
+      builder: (context, authProvider, userDataProvider, _) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -80,7 +80,7 @@ class _MyPageState extends State<MyPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${user?.phoneNumber ?? userData['nickname']}',
+                  '${userDataProvider.nickname ?? 'Guest'}',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 20),
