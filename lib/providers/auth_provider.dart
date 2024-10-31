@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../utils/firebase_service.dart';
 
 enum AuthStatus {
   uninitialized,
@@ -10,7 +9,6 @@ enum AuthStatus {
 
 class AppAuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseService _firebaseService = FirebaseService();
 
   User? _user;
   AuthStatus _status = AuthStatus.uninitialized;
@@ -92,8 +90,8 @@ class AppAuthProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      if (_onLoginSuccess != null) {
-        _onLoginSuccess!(_user!);
+      if (_user != null && _onLoginSuccess != null) {
+        _onLoginSuccess!(_user!); // async/await 제거
       }
     } on FirebaseAuthException catch (e) {
       _error = _getErrorMessage(e);

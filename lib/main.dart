@@ -31,8 +31,20 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppAuthProvider()),
-        ChangeNotifierProvider(
-            create: (_) => UserDataProvider(firebaseService)),
+        ChangeNotifierProxyProvider<AppAuthProvider, UserDataProvider>(
+          create: (_) => UserDataProvider(firebaseService),
+          update: (_, auth, previous) {
+            final provider = previous ?? UserDataProvider(firebaseService);
+            if (auth.status == AuthStatus.authenticated && auth.user != null) {
+              // 인증 상태일 때만 데이터 로드
+              provider.loadUserData(auth.user!.uid);
+            } else if (auth.status == AuthStatus.unauthenticated) {
+              // 미인증 상태일 때만 데이터 초기화
+              provider.clearData();
+            }
+            return provider;
+          },
+        ),
       ],
       child: const MyApp(),
     ),
@@ -145,13 +157,6 @@ class MyApp extends StatelessWidget {
 Widget _handleAuthState(BuildContext context) {
   return Consumer<AppAuthProvider>(
     builder: (context, auth, _) {
-      if (auth.status == AuthStatus.authenticated && auth.user != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Provider.of<UserDataProvider>(context, listen: false)
-              .loadUserData(auth.user!.uid);
-        });
-      }
-
       switch (auth.status) {
         case AuthStatus.uninitialized:
           return const Center(child: CircularProgressIndicator());
@@ -173,7 +178,37 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  bool _isFirstLaunch = true;
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (_isFirstLaunch) {
+      final userDataProvider = context.read<UserDataProvider>();
+      userDataProvider.addListener(() {
+        if (userDataProvider.status == UserDataStatus.loaded && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${userDataProvider.nickname ?? 'Guest'} 님 환영합니다'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+          _isFirstLaunch = false;
+        }
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AppAuthProvider>(context);
+    if (authProvider.status == AuthStatus.authenticated) {
+      _isFirstLaunch = true;
+    }
+  }
 
   static final List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),

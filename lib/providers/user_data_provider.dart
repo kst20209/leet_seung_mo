@@ -41,6 +41,14 @@ class UserDataProvider with ChangeNotifier {
     }
   }
 
+  // 데이터 초기화
+  void clearData() {
+    _userData = null;
+    _status = UserDataStatus.initial;
+    _error = null;
+    notifyListeners();
+  }
+
   // 데이터 새로고침
   Future<void> refreshUserData(String uid) async {
     return loadUserData(uid);

@@ -36,19 +36,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _authProvider = Provider.of<AppAuthProvider>(context, listen: false);
-    final userDataProvider =
-        Provider.of<UserDataProvider>(context, listen: false);
-    _authProvider.setLoginSuccessCallback((user) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('${userDataProvider.nickname ?? 'Guest'} 님으로 로그인되었습니다'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    });
   }
 
   Future<void> _verifyPhone() async {
