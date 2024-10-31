@@ -1,14 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum PointTransactionType {
-  purchase, // 현금으로 구매
-  reward, // 보상 (이벤트, 출석체크 등)
-  usage, // 사용 (문제 구매 등)
-  refund, // 환불
-  adjustment, // 관리자 조정
+  purchase,
+  reward,
+  usage,
+  refund,
+  adjustment,
 }
 
-enum TransactionStatus { pending, completed, failed }
+enum TransactionStatus {
+  pending,
+  completed,
+  failed,
+}
 
 class PointTransaction {
   final String userId;
@@ -36,7 +40,6 @@ class PointTransaction {
         'type': type.toString(),
         'reason': reason,
         'metadata': metadata,
-        'timestamp': FieldValue.serverTimestamp(),
         'status': status.toString(),
       };
 }
@@ -44,99 +47,7 @@ class PointTransaction {
 class PointTransactionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> processTransaction(PointTransaction transaction) async {
-    final batch = _firestore.batch();
-    final totalPoints = transaction.points + (transaction.bonusPoints ?? 0);
-
-    try {
-      // 1. 먼저 현재 사용자의 포인트를 가져옵니다
-      final userDoc =
-          await _firestore.collection('users').doc(transaction.userId).get();
-      final currentPoints = userDoc.data()?['currentPoints'] ?? 0;
-      final newBalance = currentPoints + totalPoints;
-
-      // 2. 전체 트랜잭션 로그 기록 (timestamp 포함)
-      final transactionRef = _firestore.collection('pointTransactions').doc();
-      final transactionData = {
-        ...transaction.toJson(),
-        'transactionId': transactionRef.id,
-        'balance': newBalance,
-        'timestamp': FieldValue.serverTimestamp(),
-      };
-      batch.set(transactionRef, transactionData);
-
-      // 3. 사용자 포인트 업데이트와 히스토리용 데이터 준비
-      Map<String, dynamic> historyEntry = {
-        'userId': transaction.userId,
-        'points': transaction.points,
-        'bonusPoints': transaction.bonusPoints,
-        'type': transaction.type.toString(),
-        'reason': transaction.reason,
-        'metadata': transaction.metadata,
-        'balance': newBalance,
-        'transactionId': transactionRef.id,
-      };
-
-      final userRef = _firestore.collection('users').doc(transaction.userId);
-      batch.update(userRef, {
-        'currentPoints': FieldValue.increment(totalPoints),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-
-      // 4. 트랜잭션 타입별 추가 처리
-      switch (transaction.type) {
-        case PointTransactionType.purchase:
-          batch.update(userRef, {
-            'totalPurchasedPoints': FieldValue.increment(totalPoints),
-            'totalSpentAmount':
-                FieldValue.increment(transaction.metadata['price'] as int),
-          });
-          await batch.commit();
-
-          // 히스토리는 batch 커밋 후 별도로 업데이트
-          await userRef.update({
-            'pointTransactionHistory': FieldValue.arrayUnion([historyEntry]),
-          });
-          break;
-
-        case PointTransactionType.reward:
-          batch.update(userRef, {
-            'totalRewardPoints': FieldValue.increment(totalPoints),
-          });
-          await batch.commit();
-
-          // 히스토리는 batch 커밋 후 별도로 업데이트
-          await userRef.update({
-            'rewardHistory': FieldValue.arrayUnion([historyEntry]),
-          });
-          break;
-
-        case PointTransactionType.usage:
-          batch.update(userRef, {
-            'totalUsedPoints': FieldValue.increment(totalPoints.abs()),
-          });
-          await batch.commit();
-
-          // 히스토리는 batch 커밋 후 별도로 업데이트
-          await userRef.update({
-            'pointTransactionHistory': FieldValue.arrayUnion([historyEntry]),
-          });
-          break;
-
-        default:
-          await batch.commit();
-          // 기본적으로도 트랜잭션 히스토리는 기록
-          await userRef.update({
-            'pointTransactionHistory': FieldValue.arrayUnion([historyEntry]),
-          });
-          break;
-      }
-    } catch (e) {
-      throw Exception('포인트 트랜잭션 처리 중 오류가 발생했습니다: $e');
-    }
-  }
-
-  // 포인트 구매 트랜잭션
+  // 포인트 구매 처리
   Future<void> processPurchase({
     required String userId,
     required int points,
@@ -145,38 +56,62 @@ class PointTransactionService {
     required String productId,
     Map<String, dynamic> metadata = const {},
   }) async {
-    await processTransaction(
-      PointTransaction(
-        userId: userId,
-        points: points,
-        bonusPoints: bonusPoints,
-        type: PointTransactionType.purchase,
-        reason: '포인트 구매',
-        metadata: {
+    final String transactionId =
+        _firestore.collection('pointTransactions').doc().id;
+    final totalPoints = points + bonusPoints;
+
+    await _firestore.runTransaction((transaction) async {
+      // 1. 사용자 문서 확인
+      final userDoc =
+          await transaction.get(_firestore.collection('users').doc(userId));
+
+      if (!userDoc.exists) {
+        throw Exception('사용자를 찾을 수 없습니다.');
+      }
+
+      final currentPoints = userDoc.data()?['currentPoints'] ?? 0;
+      final newBalance = currentPoints + totalPoints;
+
+      // 2. pointTransactions 컬렉션에 저장
+      final transactionData = {
+        'userId': userId,
+        'points': points,
+        'bonusPoints': bonusPoints,
+        'type': PointTransactionType.purchase.toString(),
+        'reason': '포인트 구매',
+        'metadata': {
+          ...metadata,
           'price': price,
           'productId': productId,
           'paymentMethod': 'IAP',
         },
-      ),
-    );
-  }
+        'status': TransactionStatus.completed.toString(),
+        'transactionId': transactionId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'completedAt': FieldValue.serverTimestamp(),
+      };
 
-  // 리워드 포인트 지급
-  Future<void> processReward({
-    required String userId,
-    required int points,
-    required String reason,
-    Map<String, dynamic> metadata = const {},
-  }) async {
-    await processTransaction(
-      PointTransaction(
-        userId: userId,
-        points: points,
-        type: PointTransactionType.reward,
-        reason: reason,
-        metadata: metadata,
-      ),
-    );
+      transaction.set(
+          _firestore.collection('pointTransactions').doc(transactionId),
+          transactionData);
+
+      // 3. 사용자의 transactions 서브컬렉션에 저장
+      transaction.set(
+          _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('transactions')
+              .doc(transactionId),
+          transactionData);
+
+      // 4. 사용자 문서 업데이트
+      transaction.update(userDoc.reference, {
+        'currentPoints': newBalance,
+        'totalPurchasedPoints': FieldValue.increment(totalPoints),
+        'totalSpentAmount': FieldValue.increment(price),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+    });
   }
 
   // 포인트 사용
@@ -186,28 +121,187 @@ class PointTransactionService {
     required String reason,
     Map<String, dynamic> metadata = const {},
   }) async {
-    await processTransaction(
-      PointTransaction(
-        userId: userId,
-        points: -points, // 음수로 변환
-        type: PointTransactionType.usage,
-        reason: reason,
-        metadata: metadata,
-      ),
-    );
+    final String transactionId =
+        _firestore.collection('pointTransactions').doc().id;
+
+    await _firestore.runTransaction((transaction) async {
+      // 1. 사용자 문서 확인 및 포인트 검증
+      final userDoc =
+          await transaction.get(_firestore.collection('users').doc(userId));
+
+      if (!userDoc.exists) {
+        throw Exception('사용자를 찾을 수 없습니다.');
+      }
+
+      final currentPoints = userDoc.data()?['currentPoints'] ?? 0;
+      if (currentPoints < points) {
+        throw Exception('포인트가 부족합니다.');
+      }
+
+      final newBalance = currentPoints - points;
+
+      // 2. pointTransactions 컬렉션에 저장
+      final transactionData = {
+        'userId': userId,
+        'points': -points,
+        'type': PointTransactionType.usage.toString(),
+        'reason': reason,
+        'metadata': metadata,
+        'status': TransactionStatus.completed.toString(),
+        'transactionId': transactionId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'completedAt': FieldValue.serverTimestamp(),
+      };
+
+      transaction.set(
+          _firestore.collection('pointTransactions').doc(transactionId),
+          transactionData);
+
+      // 3. 사용자의 transactions 서브컬렉션에 저장
+      transaction.set(
+          _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('transactions')
+              .doc(transactionId),
+          transactionData);
+
+      // 4. 사용자 문서 업데이트
+      transaction.update(userDoc.reference, {
+        'currentPoints': newBalance,
+        'totalUsedPoints': FieldValue.increment(points),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+    });
   }
 
-  // 거래 내역 조회
-  Future<List<Map<String, dynamic>>> getTransactionHistory(String userId,
-      {PointTransactionType? type}) async {
+// 리워드 포인트 지급
+  Future<void> processReward({
+    required String userId,
+    required int points,
+    required String reason,
+    Map<String, dynamic> metadata = const {},
+  }) async {
+    final String transactionId =
+        _firestore.collection('pointTransactions').doc().id;
+
+    await _firestore.runTransaction((transaction) async {
+      // 1. 사용자 문서 확인
+      final userDoc =
+          await transaction.get(_firestore.collection('users').doc(userId));
+
+      if (!userDoc.exists) {
+        throw Exception('사용자를 찾을 수 없습니다.');
+      }
+
+      final currentPoints = userDoc.data()?['currentPoints'] ?? 0;
+      final newBalance = currentPoints + points;
+
+      // 2. pointTransactions 컬렉션에 저장
+      final transactionData = {
+        'userId': userId,
+        'points': points,
+        'type': PointTransactionType.reward.toString(),
+        'reason': reason,
+        'metadata': {
+          ...metadata,
+          'rewardType': metadata['rewardType'] ?? 'general',
+          'rewardId': metadata['rewardId'],
+          'eventId': metadata['eventId'],
+        },
+        'status': TransactionStatus.completed.toString(),
+        'transactionId': transactionId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'completedAt': FieldValue.serverTimestamp(),
+      };
+
+      transaction.set(
+          _firestore.collection('pointTransactions').doc(transactionId),
+          transactionData);
+
+      // 3. 사용자의 transactions 서브컬렉션에 저장
+      transaction.set(
+          _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('transactions')
+              .doc(transactionId),
+          transactionData);
+
+      // 4. 사용자 문서 업데이트
+      transaction.update(userDoc.reference, {
+        'currentPoints': newBalance,
+        'totalRewardPoints': FieldValue.increment(points),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  // 특정 사용자의 트랜잭션 내역 조회
+  Future<List<Map<String, dynamic>>> getUserTransactionHistory(
+    String userId, {
+    PointTransactionType? type,
+    bool includeAllStatuses = false,
+    int? limit,
+  }) async {
     try {
       var query = _firestore
-          .collection('pointTransactions')
-          .where('userId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true);
+          .collection('users')
+          .doc(userId)
+          .collection('transactions')
+          .orderBy('createdAt', descending: true);
+
+      if (!includeAllStatuses) {
+        query = query.where('status',
+            isEqualTo: TransactionStatus.completed.toString());
+      }
 
       if (type != null) {
         query = query.where('type', isEqualTo: type.toString());
+      }
+
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      throw Exception('거래 내역 조회 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  // 전체 트랜잭션 내역 조회 (관리자용)
+  Future<List<Map<String, dynamic>>> getAllTransactions({
+    PointTransactionType? type,
+    bool includeAllStatuses = false,
+    int? limit,
+    String? lastTransactionId,
+  }) async {
+    try {
+      var query = _firestore
+          .collection('pointTransactions')
+          .orderBy('createdAt', descending: true);
+
+      if (!includeAllStatuses) {
+        query = query.where('status',
+            isEqualTo: TransactionStatus.completed.toString());
+      }
+
+      if (type != null) {
+        query = query.where('type', isEqualTo: type.toString());
+      }
+
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+
+      if (lastTransactionId != null) {
+        final lastDoc = await _firestore
+            .collection('pointTransactions')
+            .doc(lastTransactionId)
+            .get();
+        query = query.startAfterDocument(lastDoc);
       }
 
       final snapshot = await query.get();
