@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:leet_seung_mo/widgets/tag_chip.dart';
 import '../widgets/problem_set_item.dart';
 import '../utils/data_manager.dart';
 import '../models/models.dart';
+import '../providers/user_data_provider.dart';
 
 class ProblemShopPage extends StatefulWidget {
   const ProblemShopPage({super.key});
@@ -47,10 +49,24 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
             },
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _problemSets.length,
-              itemBuilder: (context, index) {
-                return ProblemSetItem(problemSet: _problemSets[index]);
+            child: Consumer<UserDataProvider>(
+              builder: (context, userDataProvider, _) {
+                return ListView.builder(
+                  itemCount: _problemSets.length,
+                  itemBuilder: (context, index) {
+                    final problemSet = _problemSets[index];
+                    final purchasedSets =
+                        userDataProvider.userData?['purchasedProblemSets']
+                                as List<dynamic>? ??
+                            [];
+                    final isPurchased = purchasedSets.contains(problemSet.id);
+
+                    return ProblemSetItem(
+                      problemSet: problemSet,
+                      isPurchased: isPurchased,
+                    );
+                  },
+                );
               },
             ),
           ),
