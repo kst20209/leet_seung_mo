@@ -1,4 +1,7 @@
 export 'problem_solving_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui' as ui;
@@ -32,6 +35,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
   final GlobalKey _toolbarKey = GlobalKey();
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   int _elapsedSeconds = 0;
   GlobalKey<TimerWidgetState> timerKey = GlobalKey<TimerWidgetState>();
 
@@ -46,6 +51,28 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     _strokeWidthOverlay?.remove();
     _colorOverlay = null;
     _strokeWidthOverlay = null;
+  }
+
+  // 드로잉 데이터를 직렬화하는 메서드
+  Map<String, dynamic> _serializeDrawingData() {
+    return {
+      'strokes': strokes.map((strokeList) {
+        return {
+          'points': strokeList
+              .map((point) => {
+                    'offset': {
+                      'dx': point.offset.dx,
+                      'dy': point.offset.dy,
+                    },
+                    'color': {
+                      'value': point.color.value,
+                    },
+                    'strokeWidth': point.strokeWidth,
+                  })
+              .toList(),
+        };
+      }).toList(),
+    };
   }
 
   @override
@@ -430,20 +457,6 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     );
   }
 
-  Widget _buildTimer() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        '00:00',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
   void _showAnswerSubmissionDialog() {
     timerKey.currentState?.pauseTimer();
     showDialog(
@@ -456,15 +469,121 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             children: [
               Text('걸린 시간: ${_formatTime(_elapsedSeconds)}'),
               ...List.generate(5, (index) {
+                final answer = (index + 1).toString();
                 return ListTile(
-                  title: Text('${index + 1}번'),
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(context).primaryColor.withOpacity(0.1),
+                    child: Text(
+                      answer,
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text('$answer번'),
                   onTap: () {
-                    // 여기에 정답 제출 로직 추가
                     Navigator.of(context).pop();
+                    _handleAnswerSubmission(answer);
                   },
                 );
               }),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 정답 제출 처리
+  Future<void> _handleAnswerSubmission(String selectedAnswer) async {
+    final authProvider = context.read<AppAuthProvider>();
+    final user = authProvider.user;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그인이 필요합니다.')),
+      );
+      return;
+    }
+
+    try {
+      // 타이머 정지
+      timerKey.currentState?.pauseTimer();
+
+      // 정답 여부 확인
+      final isCorrect = selectedAnswer == widget.problem.correctAnswer;
+
+      // Firestore에 데이터 저장
+      await _firestore.collection('userProblemAttempts').add({
+        'userId': user.uid,
+        'problemId': widget.problem.id,
+        'submittedAnswer': selectedAnswer,
+        'isCorrect': isCorrect,
+        'timeSpent': _elapsedSeconds,
+        'solvedAt': FieldValue.serverTimestamp(),
+        'drawingData': _serializeDrawingData(),
+      });
+
+      // 결과 모달 표시
+      if (mounted) {
+        _showResultModal(isCorrect);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
+  }
+
+  void _showResultModal(bool isCorrect) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isCorrect ? Icons.check_circle : Icons.close,
+                  size: 64,
+                  color: isCorrect ? Colors.green : Colors.red,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  isCorrect ? '정답입니다!' : '오답입니다.',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isCorrect ? Colors.green : Colors.red,
+                  ),
+                ),
+                SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.timer, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      _formatTime(_elapsedSeconds),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
