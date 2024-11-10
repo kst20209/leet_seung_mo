@@ -50,10 +50,12 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _showStopSolvingDialog();
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (!didPop) {
+          _showStopSolvingDialog();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
