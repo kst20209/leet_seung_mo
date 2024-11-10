@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/firebase_service.dart';
+import '../models/models.dart';
 
 enum UserDataStatus {
   initial,
@@ -17,12 +18,18 @@ class UserDataProvider with ChangeNotifier {
 
   UserDataProvider(this._firebaseService);
 
-  // Getters
+  // Existing getters
   Map<String, dynamic>? get userData => _userData;
   UserDataStatus get status => _status;
   String? get error => _error;
   String? get nickname => _userData?['nickname'] as String?;
   int get points => _userData?['currentPoints'] ?? 0;
+
+  void _setError(String error) {
+    _error = error;
+    _status = UserDataStatus.error;
+    notifyListeners();
+  }
 
   // 초기 데이터 로드
   Future<void> loadUserData(String uid) async {
@@ -49,100 +56,193 @@ class UserDataProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // 데이터 새로고침
+  // Get purchased problem sets
+  Future<List<ProblemSet>> getPurchasedProblemSets() async {
+    try {
+      if (_userData == null) {
+        return [];
+      }
+
+      final purchasedIds =
+          List<String>.from(_userData?['purchasedProblemSets'] ?? []);
+      if (purchasedIds.isEmpty) {
+        return [];
+      }
+
+      // Firebase는 whereIn에 최대 10개의 값만 허용하므로,
+      // 필요한 경우 청크로 나누어 요청
+      List<ProblemSet> allProblemSets = [];
+      for (var i = 0; i < purchasedIds.length; i += 10) {
+        var end = (i + 10 < purchasedIds.length) ? i + 10 : purchasedIds.length;
+        var chunk = purchasedIds.sublist(i, end);
+
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('problemSets')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+
+        final problemSets = querySnapshot.docs
+            .map((doc) => ProblemSet(
+                  id: doc.id,
+                  title: doc['title'],
+                  description: doc['description'],
+                  imageUrl: doc['imageUrl'],
+                  tags: List<String>.from(doc['tags']),
+                  subjectId: doc['subjectId'],
+                  price: doc['price'],
+                  totalProblems: doc['totalProblems'],
+                ))
+            .toList();
+
+        allProblemSets.addAll(problemSets);
+      }
+
+      return allProblemSets;
+    } catch (e) {
+      _setError('Failed to load purchased problem sets: $e');
+      return [];
+    }
+  }
+
+  // Get problems by problem set ID
+  Future<List<Problem>> getProblemsByProblemSetId(String problemSetId) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('problems')
+          .where('problemSetId', isEqualTo: problemSetId)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => Problem(
+                id: doc.id,
+                title: doc['title'],
+                description: doc['description'],
+                problemImage: doc['problemImage'],
+                imageUrl: doc['imageUrl'],
+                tags: List<String>.from(doc['tags']),
+                problemSetId: doc['problemSetId'],
+                correctAnswer: doc['correctAnswer'],
+              ))
+          .toList();
+    } catch (e) {
+      _setError('Failed to load problems: $e');
+      return [];
+    }
+  }
+
+  // Refresh user data
   Future<void> refreshUserData(String uid) async {
-    return loadUserData(uid);
-  }
-
-  // 포인트 사용
-  Future<void> usePoints(String uid, int amount, String reason) async {
-    if (points < amount) {
-      throw Exception('포인트가 부족합니다');
-    }
-    // Optimistic update
-    final previousPoints = points;
     try {
-      _userData = {
-        ...?_userData,
-        'currentPoints': points - amount,
-      };
+      _status = UserDataStatus.loading;
       notifyListeners();
 
-      // Firestore update
-      await _firebaseService.updateDocument('users', uid, {
-        'currentPoints': FieldValue.increment(-amount),
-        'pointHistory': FieldValue.arrayUnion([
-          {
-            'timestamp': FieldValue.serverTimestamp(),
-            'amount': -amount,
-            'reason': reason,
-          }
-        ]),
-      });
-    } catch (e) {
-      // Rollback on error
-      _userData = {
-        ...?_userData,
-        'currentPoints': previousPoints,
-      };
+      DocumentSnapshot doc = await _firebaseService.getDocument('users', uid);
+      _userData = doc.data() as Map<String, dynamic>?;
+      _status = UserDataStatus.loaded;
       notifyListeners();
-      rethrow;
+    } catch (e) {
+      _setError(e.toString());
     }
   }
 
-  // 포인트 추가
-  Future<void> addPoints(String uid, int amount, String reason) async {
-    // Optimistic update
-    final previousPoints = points;
+  // Get recently solved problems
+  Future<List<Problem>> getRecentlySolvedProblems() async {
     try {
-      _userData = {
-        ...?_userData,
-        'currentPoints': points + amount,
-      };
-      notifyListeners();
+      if (_userData == null) {
+        return [];
+      }
 
-      // Firestore update
-      await _firebaseService.updateDocument('users', uid, {
-        'currentPoints': FieldValue.increment(amount),
-        'pointHistory': FieldValue.arrayUnion([
-          {
-            'timestamp': FieldValue.serverTimestamp(),
-            'amount': amount,
-            'reason': reason,
-          }
-        ]),
-      });
+      final recentProblemIds =
+          List<String>.from(_userData?['lastSolvedProblems'] ?? []);
+      if (recentProblemIds.isEmpty) {
+        return [];
+      }
+
+      List<Problem> allProblems = [];
+      for (var i = 0; i < recentProblemIds.length; i += 10) {
+        var end = (i + 10 < recentProblemIds.length)
+            ? i + 10
+            : recentProblemIds.length;
+        var chunk = recentProblemIds.sublist(i, end);
+
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('problems')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+
+        final problems = querySnapshot.docs
+            .map((doc) => Problem(
+                  id: doc.id,
+                  title: doc['title'],
+                  description: doc['description'],
+                  problemImage: doc['problemImage'],
+                  imageUrl: doc['imageUrl'],
+                  tags: List<String>.from(doc['tags']),
+                  problemSetId: doc['problemSetId'],
+                  correctAnswer: doc['correctAnswer'],
+                ))
+            .toList();
+
+        allProblems.addAll(problems);
+      }
+
+      return allProblems;
     } catch (e) {
-      // Rollback on error
-      _userData = {
-        ...?_userData,
-        'currentPoints': previousPoints,
-      };
-      notifyListeners();
-      rethrow;
+      _setError('Failed to load recently solved problems: $e');
+      return [];
     }
   }
 
-  // 문제 구매
-  Future<void> purchaseProblemSet(
-      String uid, String problemSetId, int price) async {
+  // Get favorite problems
+  Future<List<Problem>> getFavoriteProblems() async {
     try {
-      await usePoints(uid, price, 'Purchase ProblemSet: $problemSetId');
+      final userId = _firebaseService.currentUser?.uid;
+      if (userId == null) {
+        return [];
+      }
 
-      await _firebaseService.updateDocument('users', uid, {
-        'purchasedProblemSets': FieldValue.arrayUnion([problemSetId]),
-      });
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('userSolvedProblems')
+          .where('userId', isEqualTo: userId)
+          .where('isLiked', isEqualTo: true)
+          .get();
 
-      _userData = {
-        ...?_userData,
-        'purchasedProblemSets': [
-          ...(_userData?['purchasedProblemSets'] ?? []),
-          problemSetId,
-        ],
-      };
-      notifyListeners();
+      final favoriteIds =
+          querySnapshot.docs.map((doc) => doc['problemId'] as String).toList();
+      if (favoriteIds.isEmpty) {
+        return [];
+      }
+
+      List<Problem> allProblems = [];
+      for (var i = 0; i < favoriteIds.length; i += 10) {
+        var end = (i + 10 < favoriteIds.length) ? i + 10 : favoriteIds.length;
+        var chunk = favoriteIds.sublist(i, end);
+
+        final problemsSnapshot = await FirebaseFirestore.instance
+            .collection('problems')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+
+        final problems = problemsSnapshot.docs
+            .map((doc) => Problem(
+                  id: doc.id,
+                  title: doc['title'],
+                  description: doc['description'],
+                  problemImage: doc['problemImage'],
+                  imageUrl: doc['imageUrl'],
+                  tags: List<String>.from(doc['tags']),
+                  problemSetId: doc['problemSetId'],
+                  correctAnswer: doc['correctAnswer'],
+                ))
+            .toList();
+
+        allProblems.addAll(problems);
+      }
+
+      return allProblems;
     } catch (e) {
-      rethrow;
+      _setError('Failed to load favorite problems: $e');
+      return [];
     }
   }
 }

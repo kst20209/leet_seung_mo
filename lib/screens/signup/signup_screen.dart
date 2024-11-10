@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'build_terms_page.dart';
 import 'email_password_screen.dart';
 import 'phone_verification_screen.dart';
@@ -19,7 +18,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   late final UserRepository _userRepository;
   int _currentPage = 0;
   bool _agreedToTerms = false;
-  User? _currentUser;
 
   @override
   void initState() {

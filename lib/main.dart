@@ -136,8 +136,7 @@ class MyApp extends StatelessWidget {
               child: const MainScreen(),
             ),
         '/subject_list': (context) => const ProblemSetListPage(),
-        '/problem_list': (context) =>
-            const ProblemListPage(title: '', items: []),
+        '/problem_list': (context) => const ProblemListPage(title: ''),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/problem_solving') {

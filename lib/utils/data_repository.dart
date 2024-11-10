@@ -68,32 +68,4 @@ class DataRepository {
             ))
         .toList();
   }
-
-  Future<void> addProblem(Problem problem) async {
-    await _firebaseService.addDocument('problems', {
-      'title': problem.title,
-      'description': problem.description,
-      'problemImage': problem.problemImage,
-      'imageUrl': problem.imageUrl,
-      'tags': problem.tags,
-      'problemSetId': problem.problemSetId,
-      'correctAnswer': problem.correctAnswer,
-    });
-  }
-
-  Future<void> updateProblem(Problem problem) async {
-    await _firebaseService.updateDocument('problems', problem.id, {
-      'title': problem.title,
-      'description': problem.description,
-      'problemImage': problem.problemImage,
-      'imageUrl': problem.imageUrl,
-      'tags': problem.tags,
-      'problemSetId': problem.problemSetId,
-      'correctAnswer': problem.correctAnswer,
-    });
-  }
-
-  Future<void> deleteProblem(String id) async {
-    await _firebaseService.deleteDocument('problems', id);
-  }
 }

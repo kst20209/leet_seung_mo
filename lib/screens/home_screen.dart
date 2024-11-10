@@ -115,11 +115,8 @@ class HomeScreen extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => ProblemListPage(
                 title: problemSet.title,
-                items: problemSetToProblems[problemSet.id]
-                        ?.map((id) => problems[id])
-                        .whereType<Problem>()
-                        .toList() ??
-                    [],
+                type: ProblemListType.problemSet,
+                problemSetId: problemSet.id,
               ),
             ),
           );
