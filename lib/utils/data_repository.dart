@@ -61,6 +61,7 @@ class DataRepository {
               title: doc['title'],
               description: doc['description'],
               problemImage: doc['problemImage'],
+              solutionImage: doc['solutionImage'],
               imageUrl: doc['imageUrl'],
               tags: List<String>.from(doc['tags']),
               problemSetId: doc['problemSetId'],

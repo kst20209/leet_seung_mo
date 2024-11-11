@@ -53,6 +53,17 @@ class TimerWidgetState extends State<TimerWidget> {
     _isTimerPaused = false;
   }
 
+  void resetTimer() {
+    setState(() {
+      _seconds = 0;
+      _isTimerPaused = false;
+      widget.onTimerUpdate(_seconds); // 부모 위젯에 업데이트 알림
+    });
+
+    // 타이머 재시작
+    _startTimer();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(

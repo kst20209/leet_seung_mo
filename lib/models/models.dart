@@ -25,6 +25,7 @@ class Problem {
   final String title;
   final String description;
   final String problemImage;
+  final String solutionImage;
   final String imageUrl;
   final List<String> tags;
   final String problemSetId;
@@ -35,6 +36,7 @@ class Problem {
     required this.title,
     required this.description,
     required this.problemImage,
+    required this.solutionImage,
     required this.imageUrl,
     required this.tags,
     required this.problemSetId,

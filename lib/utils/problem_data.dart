@@ -43,6 +43,7 @@ Map<String, Problem> problems = {
     id: 'problem1',
     title: '4번',
     description: '추리논증 단순주장+논쟁형 기타',
+    solutionImage: '',
     problemImage:
         'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
     imageUrl:
@@ -55,6 +56,7 @@ Map<String, Problem> problems = {
     id: 'problem2',
     title: '3번',
     description: '추리논증 단순주장+논쟁형 기타',
+    solutionImage: '',
     problemImage:
         'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
     imageUrl:
@@ -67,6 +69,7 @@ Map<String, Problem> problems = {
     id: 'problem3',
     title: '2번',
     description: '추리논증 단순주장+논쟁형 기타',
+    solutionImage: '',
     problemImage:
         'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
     imageUrl:
@@ -84,6 +87,7 @@ List<Problem> freeProblemToday = [
     description: '다이어그램형',
     problemImage:
         'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
+    solutionImage: '',
     imageUrl:
         'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/%EB%8B%A4%EC%9D%B4%EC%96%B4%EA%B7%B8%EB%9E%A8%ED%98%95.png?alt=media&token=2e1290bf-f6c9-403c-bb70-ac270718e6e0',
     tags: ['추리논증', '다이어그램형'],
@@ -94,6 +98,7 @@ List<Problem> freeProblemToday = [
     id: 'free2',
     title: '추리논증',
     description: '논쟁형',
+    solutionImage: '',
     problemImage:
         'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
     imageUrl:
@@ -106,6 +111,7 @@ List<Problem> freeProblemToday = [
     id: 'free3',
     title: '언어이해',
     description: '자료분석형',
+    solutionImage: '',
     problemImage:
         'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/problem_sample.png?alt=media&token=b2e32d6c-e3f2-42ae-a41a-c0e85e957c03',
     imageUrl:

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui' as ui;
 import '../models/models.dart';
+import '../utils/problem_solve_service.dart';
 import '../widgets/timer_widget.dart';
 import '../utils/custom_network_image.dart';
 
@@ -20,6 +21,7 @@ class ProblemSolvingPage extends StatefulWidget {
 
 class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   bool isTimerPaused = false;
+  bool _isReviewMode = false;
   Color selectedColor = Colors.black;
   double strokeWidth = 2.0;
   bool isEraserMode = false;
@@ -35,7 +37,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
   final GlobalKey _toolbarKey = GlobalKey();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ProblemSolveService _problemSolveService = ProblemSolveService();
 
   int _elapsedSeconds = 0;
   GlobalKey<TimerWidgetState> timerKey = GlobalKey<TimerWidgetState>();
@@ -93,98 +95,140 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
           ),
           actions: [
             TextButton(
-              child: Text('정답 제출', style: TextStyle(color: Colors.black)),
-              onPressed: () {
-                _showAnswerSubmissionDialog();
-              },
+              child: Text(_isReviewMode ? '다시 풀기' : '정답 제출',
+                  style: TextStyle(color: Colors.black)),
+              onPressed: _isReviewMode
+                  ? _showRestartConfirmation
+                  : _showAnswerSubmissionDialog,
             ),
           ],
         ),
-        body: GestureDetector(
-          onTap: _removeOverlays,
-          child: Column(
-            children: [
-              _buildToolbar(),
-              Expanded(
-                child: Stack(
-                  children: [
-                    Container(color: Colors.white),
-                    Positioned(
-                      left: 20,
-                      top: 20,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width - 40,
-                        ),
-                        child: CustomNetworkImage(
-                          imageUrl: widget.problem.problemImage,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
+        body: _isReviewMode ? _buildReviewMode() : _buildProblemArea(),
+      ),
+    );
+  }
+
+  // 일반 풀이 모드
+  Widget _buildProblemArea() {
+    return GestureDetector(
+      onTap: _removeOverlays,
+      child: Column(
+        children: [
+          _buildToolbar(),
+          Expanded(
+            child: Stack(
+              children: [
+                Container(color: Colors.white),
+                Positioned(
+                  left: 20,
+                  top: 20,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width - 40,
                     ),
-                    Listener(
-                      behavior: HitTestBehavior.opaque,
-                      onPointerDown: (PointerDownEvent event) {
-                        if (event.kind == PointerDeviceKind.stylus) {
-                          setState(() {
-                            currentPosition = event.localPosition;
-                            if (isEraserMode) {
-                              _erase(event.localPosition);
-                            } else {
-                              currentStroke = [
-                                DrawingPoint(event.localPosition, selectedColor,
-                                    strokeWidth)
-                              ];
-                            }
-                          });
-                        }
-                      },
-                      onPointerMove: (PointerMoveEvent event) {
-                        if (event.kind == PointerDeviceKind.stylus) {
-                          setState(() {
-                            currentPosition = event.localPosition;
-                            if (isEraserMode) {
-                              _erase(event.localPosition);
-                            } else {
-                              currentStroke.add(DrawingPoint(
-                                  event.localPosition,
-                                  selectedColor,
-                                  strokeWidth));
-                            }
-                          });
-                        }
-                      },
-                      onPointerUp: (PointerUpEvent event) {
-                        if (event.kind == PointerDeviceKind.stylus) {
-                          setState(() {
-                            currentPosition = null;
-                            if (!isEraserMode) {
-                              strokes.add(List.from(currentStroke));
-                              currentStroke.clear();
-                            }
-                          });
-                        }
-                      },
-                      child: CustomPaint(
-                        painter: DrawingPainter(
-                            strokes,
-                            currentStroke,
-                            isEraserMode,
-                            currentPosition,
-                            strokeWidth,
-                            eraserWidth),
-                        child: Container(
-                          height: double.infinity,
-                          width: double.infinity,
-                        ),
-                      ),
+                    child: CustomNetworkImage(
+                      imageUrl: widget.problem.problemImage,
+                      fit: BoxFit.contain,
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (PointerDownEvent event) {
+                    if (event.kind == PointerDeviceKind.stylus) {
+                      setState(() {
+                        currentPosition = event.localPosition;
+                        if (isEraserMode) {
+                          _erase(event.localPosition);
+                        } else {
+                          currentStroke = [
+                            DrawingPoint(
+                                event.localPosition, selectedColor, strokeWidth)
+                          ];
+                        }
+                      });
+                    }
+                  },
+                  onPointerMove: (PointerMoveEvent event) {
+                    if (event.kind == PointerDeviceKind.stylus) {
+                      setState(() {
+                        currentPosition = event.localPosition;
+                        if (isEraserMode) {
+                          _erase(event.localPosition);
+                        } else {
+                          currentStroke.add(DrawingPoint(
+                              event.localPosition, selectedColor, strokeWidth));
+                        }
+                      });
+                    }
+                  },
+                  onPointerUp: (PointerUpEvent event) {
+                    if (event.kind == PointerDeviceKind.stylus) {
+                      setState(() {
+                        currentPosition = null;
+                        if (!isEraserMode) {
+                          strokes.add(List.from(currentStroke));
+                          currentStroke.clear();
+                        }
+                      });
+                    }
+                  },
+                  child: CustomPaint(
+                    painter: DrawingPainter(
+                        strokes,
+                        currentStroke,
+                        isEraserMode,
+                        currentPosition,
+                        strokeWidth,
+                        eraserWidth),
+                    child: Container(
+                      height: double.infinity,
+                      width: double.infinity,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+// 해설 리뷰 모드
+  Widget _buildReviewMode() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // 문제 풀이 영역 (기존 화면)
+          Container(
+            height: MediaQuery.of(context).size.height,
+            child: _buildProblemArea(),
+          ),
+          // 해설 이미지 영역 (새로 추가)
+          Container(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    '해설',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                CustomNetworkImage(
+                  imageUrl: widget.problem.solutionImage,
+                  fit: BoxFit.contain,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -509,6 +553,17 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     }
 
     try {
+      // 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
       // 타이머 정지
       timerKey.currentState?.pauseTimer();
 
@@ -516,21 +571,28 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
       final isCorrect = selectedAnswer == widget.problem.correctAnswer;
 
       // Firestore에 데이터 저장
-      await _firestore.collection('userProblemAttempts').add({
-        'userId': user.uid,
-        'problemId': widget.problem.id,
-        'submittedAnswer': selectedAnswer,
-        'isCorrect': isCorrect,
-        'timeSpent': _elapsedSeconds,
-        'solvedAt': FieldValue.serverTimestamp(),
-        'drawingData': _serializeDrawingData(),
-      });
+      await _problemSolveService.saveAttempt(
+        userId: user.uid,
+        problemId: widget.problem.id,
+        submittedAnswer: selectedAnswer,
+        isCorrect: isCorrect,
+        timeSpent: _elapsedSeconds,
+        drawingData: _serializeDrawingData(),
+        strokes: strokes,
+      );
+
+      // 로딩 닫기
+      Navigator.of(context).pop();
 
       // 결과 모달 표시
+      setState(() {
+        _isReviewMode = true;
+      });
       if (mounted) {
         _showResultModal(isCorrect);
       }
     } catch (e) {
+      Navigator.of(context).pop(); // 로딩 닫기
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('저장 중 오류가 발생했습니다: $e')),
@@ -588,6 +650,44 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         );
       },
     );
+  }
+
+  void _showRestartConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text('다시 풀기'),
+          content: Text('정말로 다시 푸시겠습니까?\n현재 작성 중인 내용이 모두 초기화됩니다.'),
+          actions: [
+            TextButton(
+              child: Text('아니오'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('예'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _restartProblem();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _restartProblem() {
+    setState(() {
+      _isReviewMode = false;
+      strokes.clear();
+      currentStroke.clear();
+      _elapsedSeconds = 0;
+      timerKey.currentState?.resetTimer();
+    });
   }
 
   String _formatTime(int seconds) {
