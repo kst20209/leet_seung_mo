@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 
 class TimerWidget extends StatefulWidget {
   final Function(int) onTimerUpdate;
+  final int initialSeconds;
 
-  const TimerWidget({Key? key, required this.onTimerUpdate}) : super(key: key);
+  const TimerWidget({
+    Key? key,
+    required this.onTimerUpdate,
+    this.initialSeconds = 0,
+  }) : super(key: key);
 
   @override
   TimerWidgetState createState() => TimerWidgetState();
@@ -12,12 +17,13 @@ class TimerWidget extends StatefulWidget {
 
 class TimerWidgetState extends State<TimerWidget> {
   Timer? _timer;
-  int _seconds = 0;
+  late int _seconds;
   bool _isTimerPaused = false;
 
   @override
   void initState() {
     super.initState();
+    _seconds = widget.initialSeconds;
     _startTimer();
   }
 

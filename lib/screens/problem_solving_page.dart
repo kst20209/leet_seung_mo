@@ -91,11 +91,29 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
           final drawingData =
               await _problemSolveService.loadDrawingData(latestAttemptId);
 
+          // 소요 시간 가져오기
+          final attemptData = await _problemSolveService.getLatestAttemptData(
+            user.uid,
+            widget.problem.id,
+          );
+
+          final timeSpent = attemptData?['timeSpent'] as int?;
+
           if (mounted) {
             setState(() {
               _isReviewMode = true;
               problemStrokes = drawingData['problemStrokes'] ?? [];
               solutionStrokes = drawingData['solutionStrokes'] ?? [];
+              if (timeSpent != null) {
+                _elapsedSeconds = timeSpent;
+                // 타이머를 멈추고 시간 설정
+                timerKey = GlobalKey<TimerWidgetState>();
+              }
+              if (timeSpent != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  timerKey.currentState?.pauseTimer();
+                });
+              }
             });
           }
         }
@@ -133,7 +151,9 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
         if (!didPop) {
-          _showStopSolvingDialog();
+          _isReviewMode
+              ? _showRestartConfirmation
+              : _showAnswerSubmissionDialog;
         }
       },
       child: Scaffold(
@@ -350,6 +370,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
           SizedBox(width: 20),
           TimerWidget(
             key: timerKey,
+            initialSeconds: _elapsedSeconds,
             onTimerUpdate: (seconds) {
               _elapsedSeconds = seconds;
             },

@@ -264,4 +264,26 @@ class ProblemSolveService {
           .toList();
     }).toList();
   }
+
+  Future<Map<String, dynamic>?> getLatestAttemptData(
+      String userId, String problemId) async {
+    try {
+      print("userid: {$userId}");
+      print("problemid: {$problemId}");
+      final QuerySnapshot attemptSnapshot = await _firestore
+          .collection('drawingAttempts')
+          .where('userId', isEqualTo: userId)
+          .where('problemId', isEqualTo: problemId)
+          .orderBy('timestamp', descending: true)
+          .limit(1)
+          .get();
+
+      if (attemptSnapshot.docs.isEmpty) return null;
+
+      return attemptSnapshot.docs.first.data() as Map<String, dynamic>;
+    } catch (e) {
+      print('Error getting latest attempt data: $e');
+      return null;
+    }
+  }
 }
