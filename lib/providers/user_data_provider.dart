@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/firebase_service.dart';
 import '../models/models.dart';
+import 'problem_user_data_service.dart';
 
 enum UserDataStatus {
   initial,
@@ -12,13 +13,20 @@ enum UserDataStatus {
 
 class UserDataProvider with ChangeNotifier {
   final FirebaseService _firebaseService;
+  final ProblemUserDataService _problemUserDataService =
+      ProblemUserDataService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   Map<String, dynamic>? _userData;
   UserDataStatus _status = UserDataStatus.initial;
   String? _error;
 
+  // 캐시를 위한 맵
+  final Map<String, Map<String, dynamic>> _problemDataCache = {};
+
   UserDataProvider(this._firebaseService);
 
-  // Existing getters
+  // 기존 getters
   Map<String, dynamic>? get userData => _userData;
   UserDataStatus get status => _status;
   String? get error => _error;
@@ -56,27 +64,125 @@ class UserDataProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Refresh user data
+  Future<void> refreshUserData(String uid) async {
+    try {
+      _status = UserDataStatus.loading;
+      notifyListeners();
+
+      DocumentSnapshot doc = await _firebaseService.getDocument('users', uid);
+      _userData = doc.data() as Map<String, dynamic>?;
+      _status = UserDataStatus.loaded;
+      notifyListeners();
+    } catch (e) {
+      _setError(e.toString());
+    }
+  }
+
+  // 특정 문제의 사용자 데이터 조회
+  Future<Map<String, dynamic>?> getProblemData(String problemId) async {
+    if (_problemDataCache.containsKey(problemId)) {
+      return _problemDataCache[problemId];
+    }
+
+    final userId = _firebaseService.currentUser?.uid;
+    if (userId == null) return null;
+
+    try {
+      final data = await _problemUserDataService.getProblemData(
+        userId: userId,
+        problemId: problemId,
+      );
+
+      if (data != null) {
+        _problemDataCache[problemId] = data;
+      }
+
+      return data;
+    } catch (e) {
+      print('Error getting problem data: $e');
+      return null;
+    }
+  }
+
+  // 즐겨찾기 토글
+  Future<bool> toggleFavorite(String problemId) async {
+    final userId = _firebaseService.currentUser?.uid;
+    if (userId == null) throw Exception('User not logged in');
+
+    try {
+      final newState = await _problemUserDataService.toggleFavorite(
+        userId: userId,
+        problemId: problemId,
+      );
+
+      if (_problemDataCache.containsKey(problemId)) {
+        _problemDataCache[problemId]?['isFavorite'] = newState;
+      }
+
+      notifyListeners();
+      return newState;
+    } catch (e) {
+      print('Error toggling favorite: $e');
+      rethrow;
+    }
+  }
+
+  // 즐겨찾기한 문제 목록 조회
+  Future<List<Problem>> getFavoriteProblems() async {
+    try {
+      final userId = _firebaseService.currentUser?.uid;
+      if (userId == null) return [];
+
+      final favoriteIds =
+          await _problemUserDataService.getFavoriteProblemIds(userId);
+      if (favoriteIds.isEmpty) return [];
+
+      final QuerySnapshot problemsSnapshot = await _firestore
+          .collection('problems')
+          .where(FieldPath.documentId, whereIn: favoriteIds)
+          .get();
+
+      return problemsSnapshot.docs
+          .map((doc) => Problem(
+                id: doc.id,
+                title: doc['title'],
+                description: doc['description'],
+                problemImage: doc['problemImage'],
+                solutionImage: doc['solutionImage'],
+                imageUrl: doc['imageUrl'],
+                tags: List<String>.from(doc['tags']),
+                problemSetId: doc['problemSetId'],
+                correctAnswer: doc['correctAnswer'],
+              ))
+          .toList();
+    } catch (e) {
+      _setError('Failed to load favorite problems: $e');
+      return [];
+    }
+  }
+
+  // 캐시 무효화
+  void invalidateProblemCache(String problemId) {
+    _problemDataCache.remove(problemId);
+    notifyListeners();
+  }
+
   // Get purchased problem sets
   Future<List<ProblemSet>> getPurchasedProblemSets() async {
     try {
-      if (_userData == null) {
-        return [];
-      }
+      if (_userData == null) return [];
 
       final purchasedIds =
           List<String>.from(_userData?['purchasedProblemSets'] ?? []);
-      if (purchasedIds.isEmpty) {
-        return [];
-      }
+      if (purchasedIds.isEmpty) return [];
 
-      // Firebase는 whereIn에 최대 10개의 값만 허용하므로,
-      // 필요한 경우 청크로 나누어 요청
       List<ProblemSet> allProblemSets = [];
       for (var i = 0; i < purchasedIds.length; i += 10) {
         var end = (i + 10 < purchasedIds.length) ? i + 10 : purchasedIds.length;
         var chunk = purchasedIds.sublist(i, end);
 
-        final querySnapshot = await FirebaseFirestore.instance
+        final querySnapshot = await _firestore
             .collection('problemSets')
             .where(FieldPath.documentId, whereIn: chunk)
             .get();
@@ -107,7 +213,7 @@ class UserDataProvider with ChangeNotifier {
   // Get problems by problem set ID
   Future<List<Problem>> getProblemsByProblemSetId(String problemSetId) async {
     try {
-      final querySnapshot = await FirebaseFirestore.instance
+      final querySnapshot = await _firestore
           .collection('problems')
           .where('problemSetId', isEqualTo: problemSetId)
           .get();
@@ -131,33 +237,14 @@ class UserDataProvider with ChangeNotifier {
     }
   }
 
-  // Refresh user data
-  Future<void> refreshUserData(String uid) async {
-    try {
-      _status = UserDataStatus.loading;
-      notifyListeners();
-
-      DocumentSnapshot doc = await _firebaseService.getDocument('users', uid);
-      _userData = doc.data() as Map<String, dynamic>?;
-      _status = UserDataStatus.loaded;
-      notifyListeners();
-    } catch (e) {
-      _setError(e.toString());
-    }
-  }
-
   // Get recently solved problems
   Future<List<Problem>> getRecentlySolvedProblems() async {
     try {
-      if (_userData == null) {
-        return [];
-      }
+      if (_userData == null) return [];
 
       final recentProblemIds =
           List<String>.from(_userData?['lastSolvedProblems'] ?? []);
-      if (recentProblemIds.isEmpty) {
-        return [];
-      }
+      if (recentProblemIds.isEmpty) return [];
 
       List<Problem> allProblems = [];
       for (var i = 0; i < recentProblemIds.length; i += 10) {
@@ -166,7 +253,7 @@ class UserDataProvider with ChangeNotifier {
             : recentProblemIds.length;
         var chunk = recentProblemIds.sublist(i, end);
 
-        final querySnapshot = await FirebaseFirestore.instance
+        final querySnapshot = await _firestore
             .collection('problems')
             .where(FieldPath.documentId, whereIn: chunk)
             .get();
@@ -191,60 +278,6 @@ class UserDataProvider with ChangeNotifier {
       return allProblems;
     } catch (e) {
       _setError('Failed to load recently solved problems: $e');
-      return [];
-    }
-  }
-
-  // Get favorite problems
-  Future<List<Problem>> getFavoriteProblems() async {
-    try {
-      final userId = _firebaseService.currentUser?.uid;
-      if (userId == null) {
-        return [];
-      }
-
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('userSolvedProblems')
-          .where('userId', isEqualTo: userId)
-          .where('isLiked', isEqualTo: true)
-          .get();
-
-      final favoriteIds =
-          querySnapshot.docs.map((doc) => doc['problemId'] as String).toList();
-      if (favoriteIds.isEmpty) {
-        return [];
-      }
-
-      List<Problem> allProblems = [];
-      for (var i = 0; i < favoriteIds.length; i += 10) {
-        var end = (i + 10 < favoriteIds.length) ? i + 10 : favoriteIds.length;
-        var chunk = favoriteIds.sublist(i, end);
-
-        final problemsSnapshot = await FirebaseFirestore.instance
-            .collection('problems')
-            .where(FieldPath.documentId, whereIn: chunk)
-            .get();
-
-        final problems = problemsSnapshot.docs
-            .map((doc) => Problem(
-                  id: doc.id,
-                  title: doc['title'],
-                  description: doc['description'],
-                  problemImage: doc['problemImage'],
-                  solutionImage: doc['solutionImage'],
-                  imageUrl: doc['imageUrl'],
-                  tags: List<String>.from(doc['tags']),
-                  problemSetId: doc['problemSetId'],
-                  correctAnswer: doc['correctAnswer'],
-                ))
-            .toList();
-
-        allProblems.addAll(problems);
-      }
-
-      return allProblems;
-    } catch (e) {
-      _setError('Failed to load favorite problems: $e');
       return [];
     }
   }

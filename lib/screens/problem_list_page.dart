@@ -194,99 +194,163 @@ class _ProblemListPageState extends State<ProblemListPage> {
   }
 }
 
-class ProblemListItem extends StatelessWidget {
+class ProblemListItem extends StatefulWidget {
   final Problem problem;
 
   const ProblemListItem({Key? key, required this.problem}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    // 하드코딩된 값들
-    final bool isSolved = false;
-    final String solveTime = '5분 30초';
-    final bool isFavorite = true;
+  State<ProblemListItem> createState() => _ProblemListItemState();
+}
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/problem_solving',
-            arguments: problem,
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CustomNetworkImage(
-                      imageUrl: problem.imageUrl,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
+class _ProblemListItemState extends State<ProblemListItem> {
+  bool _isSolved = false;
+  bool _isFavorite = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProblemState();
+  }
+
+  Future<void> _loadProblemState() async {
+    final userDataProvider = context.read<UserDataProvider>();
+
+    try {
+      final problemData =
+          await userDataProvider.getProblemData(widget.problem.id);
+      if (mounted) {
+        setState(() {
+          _isSolved = problemData?['isSolved'] ?? false;
+          _isFavorite = problemData?['isFavorite'] ?? false;
+        });
+      }
+    } catch (e) {
+      print('Error loading problem state: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userDataProvider = context.read<UserDataProvider>();
+      final newState = await userDataProvider.toggleFavorite(widget.problem.id);
+
+      if (mounted) {
+        setState(() {
+          _isFavorite = newState;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('즐겨찾기 설정 중 오류가 발생했습니다.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ColorFiltered(
+      colorFilter: ColorFilter.matrix(
+        _isSolved
+            ? [
+                0.95, 0, 0, 0, 0, // Red
+                0, 0.95, 0, 0, 0, // Green
+                0, 0, 0.95, 0, 0, // Blue
+                0, 0, 0, 0.6, 0, // Alpha
+              ]
+            : [
+                1, 0, 0, 0, 0, // Red
+                0, 1, 0, 0, 0, // Green
+                0, 0, 1, 0, 0, // Blue
+                0, 0, 0, 1, 0, // Alpha
+              ],
+      ),
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/problem_solving',
+              arguments: widget.problem,
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CustomNetworkImage(
+                        imageUrl: widget.problem.imageUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          problem.title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.problem.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          problem.description,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
+                          Text(
+                            widget.problem.description,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
+                    IconButton(
+                      icon: _isLoading
+                          ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Icon(
+                              _isFavorite ? Icons.star : Icons.star_border,
+                              color: Colors.amber,
+                            ),
+                      onPressed: _isLoading ? null : _toggleFavorite,
                     ),
-                    onPressed: () {
-                      // Toggle favorite status
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children:
-                    problem.tags.map((tag) => TagChip(label: tag)).toList(),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isSolved ? 'Solved' : 'Not Solved',
-                    style: TextStyle(
-                      color: isSolved ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (isSolved)
-                    Text(
-                      'Time: $solveTime',
-                      style: const TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: widget.problem.tags
+                      .map((tag) => TagChip(label: tag))
+                      .toList(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
