@@ -1,12 +1,11 @@
 export 'problem_solving_page.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'dart:ui' as ui;
 import '../models/models.dart';
 import '../utils/problem_solve_service.dart';
+import '../widgets/drawing_area.dart';
 import '../widgets/timer_widget.dart';
 import '../utils/custom_network_image.dart';
 
@@ -25,8 +24,27 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   Color selectedColor = Colors.black;
   double strokeWidth = 2.0;
   bool isEraserMode = false;
-  List<List<DrawingPoint>> strokes = [];
+  List<List<DrawingPoint>> problemStrokes = [];
+  List<List<DrawingPoint>> solutionStrokes = [];
+
+  int _currentPageIndex = 0;
+  late final PageController _pageController;
+
+  // 현재 활성화된 strokes (문제/해설)
+  List<List<DrawingPoint>> _getActiveStrokes() {
+    return _currentPageIndex == 0 ? problemStrokes : solutionStrokes;
+  }
+
   List<DrawingPoint> currentStroke = [];
+
+  // 스크롤 위치 추적을 위한 컨트롤러들
+  final ScrollController problemScrollController = ScrollController();
+  final ScrollController solutionScrollController = ScrollController();
+
+  ScrollController get _currentScrollController => _currentPageIndex == 0
+      ? problemScrollController
+      : solutionScrollController;
+
   Offset? currentPosition;
   final double eraserWidth = 10.0;
   OverlayEntry? _colorOverlay;
@@ -43,9 +61,31 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   GlobalKey<TimerWidgetState> timerKey = GlobalKey<TimerWidgetState>();
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+    _pageController.addListener(() {
+      if (_pageController.page != null) {
+        setState(() {
+          _currentPageIndex = _pageController.page!.round();
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
-    _removeOverlays();
+    _pageController.removeListener(_onPageChanged);
+    _pageController.dispose();
     super.dispose();
+  }
+
+  void _onPageChanged() {
+    if (_pageController.page != null) {
+      setState(() {
+        _currentPageIndex = _pageController.page!.round();
+      });
+    }
   }
 
   void _removeOverlays() {
@@ -58,7 +98,23 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   // 드로잉 데이터를 직렬화하는 메서드
   Map<String, dynamic> _serializeDrawingData() {
     return {
-      'strokes': strokes.map((strokeList) {
+      'problemStrokes': problemStrokes.map((strokeList) {
+        return {
+          'points': strokeList
+              .map((point) => {
+                    'offset': {
+                      'dx': point.offset.dx,
+                      'dy': point.offset.dy,
+                    },
+                    'color': {
+                      'value': point.color.value,
+                    },
+                    'strokeWidth': point.strokeWidth,
+                  })
+              .toList(),
+        };
+      }).toList(),
+      'solutionStrokes': solutionStrokes.map((strokeList) {
         return {
           'points': strokeList
               .map((point) => {
@@ -103,133 +159,166 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             ),
           ],
         ),
-        body: _isReviewMode ? _buildReviewMode() : _buildProblemArea(),
+        body: Column(
+          children: [
+            _buildToolbar(), // 스크롤과 무관하게 항상 상단에 고정
+            Expanded(
+              child: DrawingArea(
+                onStylusDown: (event) {
+                  setState(() {
+                    // 현재 스크롤 위치를 고려한 오프셋 계산
+                    final scrollOffset = _currentScrollController.hasClients
+                        ? _currentScrollController.offset
+                        : 0.0;
+                    final adjustedPosition =
+                        event.localPosition + Offset(0, scrollOffset);
+                    currentPosition = adjustedPosition;
+                    if (isEraserMode) {
+                      _erase(adjustedPosition);
+                    } else {
+                      currentStroke = [
+                        DrawingPoint(
+                            adjustedPosition, selectedColor, strokeWidth)
+                      ];
+                    }
+                  });
+                },
+                onStylusMove: (event) {
+                  setState(() {
+                    final scrollOffset = _currentScrollController.hasClients
+                        ? _currentScrollController.offset
+                        : 0.0;
+                    final adjustedPosition =
+                        event.localPosition + Offset(0, scrollOffset);
+                    currentPosition = adjustedPosition;
+                    if (isEraserMode) {
+                      _erase(adjustedPosition);
+                    } else {
+                      currentStroke.add(DrawingPoint(
+                          adjustedPosition, selectedColor, strokeWidth));
+                    }
+                  });
+                },
+                onStylusUp: (event) {
+                  setState(() {
+                    currentPosition = null;
+                    if (!isEraserMode) {
+                      _getActiveStrokes().add(List.from(currentStroke));
+                      currentStroke.clear();
+                    }
+                  });
+                },
+                child: PageView(
+                  controller: _pageController,
+                  physics: const PageScrollPhysics(),
+                  children: [
+                    SingleChildScrollView(
+                      controller: problemScrollController,
+                      child: _buildProblemArea(),
+                    ),
+                    if (_isReviewMode)
+                      SingleChildScrollView(
+                        controller: solutionScrollController,
+                        child: _buildSolutionArea(),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // 일반 풀이 모드
   Widget _buildProblemArea() {
-    return GestureDetector(
-      onTap: _removeOverlays,
-      child: Column(
-        children: [
-          _buildToolbar(),
-          Expanded(
-            child: Stack(
-              children: [
-                Container(color: Colors.white),
-                Positioned(
-                  left: 20,
-                  top: 20,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width - 40,
-                    ),
-                    child: CustomNetworkImage(
-                      imageUrl: widget.problem.problemImage,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                Listener(
-                  behavior: HitTestBehavior.opaque,
-                  onPointerDown: (PointerDownEvent event) {
-                    if (event.kind == PointerDeviceKind.stylus) {
-                      setState(() {
-                        currentPosition = event.localPosition;
-                        if (isEraserMode) {
-                          _erase(event.localPosition);
-                        } else {
-                          currentStroke = [
-                            DrawingPoint(
-                                event.localPosition, selectedColor, strokeWidth)
-                          ];
-                        }
-                      });
-                    }
-                  },
-                  onPointerMove: (PointerMoveEvent event) {
-                    if (event.kind == PointerDeviceKind.stylus) {
-                      setState(() {
-                        currentPosition = event.localPosition;
-                        if (isEraserMode) {
-                          _erase(event.localPosition);
-                        } else {
-                          currentStroke.add(DrawingPoint(
-                              event.localPosition, selectedColor, strokeWidth));
-                        }
-                      });
-                    }
-                  },
-                  onPointerUp: (PointerUpEvent event) {
-                    if (event.kind == PointerDeviceKind.stylus) {
-                      setState(() {
-                        currentPosition = null;
-                        if (!isEraserMode) {
-                          strokes.add(List.from(currentStroke));
-                          currentStroke.clear();
-                        }
-                      });
-                    }
-                  },
-                  child: CustomPaint(
-                    painter: DrawingPainter(
-                        strokes,
-                        currentStroke,
-                        isEraserMode,
-                        currentPosition,
-                        strokeWidth,
-                        eraserWidth),
-                    child: Container(
-                      height: double.infinity,
-                      width: double.infinity,
-                    ),
-                  ),
-                ),
-              ],
+    return Stack(
+      children: [
+        Container(
+          height: MediaQuery.of(context).size.height * 2,
+          color: Colors.white,
+        ),
+        Positioned(
+          left: 20,
+          top: 20,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width - 40,
+            ),
+            child: CustomNetworkImage(
+              imageUrl: widget.problem.problemImage,
+              fit: BoxFit.contain,
             ),
           ),
-        ],
-      ),
+        ),
+        CustomPaint(
+          painter: DrawingPainter(
+            problemStrokes,
+            _currentPageIndex == 0 ? currentStroke : const [],
+            isEraserMode,
+            _currentPageIndex == 0 ? currentPosition : null,
+            strokeWidth,
+            eraserWidth,
+          ),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 2,
+            width: MediaQuery.of(context).size.width,
+          ),
+        ),
+      ],
     );
   }
 
-// 해설 리뷰 모드
-  Widget _buildReviewMode() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // 문제 풀이 영역 (기존 화면)
-          Container(
-            height: MediaQuery.of(context).size.height,
-            child: _buildProblemArea(),
-          ),
-          // 해설 이미지 영역 (새로 추가)
-          Container(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    '해설',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+  Widget _buildSolutionArea() {
+    return Stack(
+      children: [
+        Container(
+          height: MediaQuery.of(context).size.height * 2,
+          color: Colors.white,
+        ),
+        Positioned(
+          left: 20,
+          top: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  '해설',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                CustomNetworkImage(
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width - 40,
+                ),
+                child: CustomNetworkImage(
                   imageUrl: widget.problem.solutionImage,
                   fit: BoxFit.contain,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        CustomPaint(
+          painter: DrawingPainter(
+            solutionStrokes,
+            _currentPageIndex == 1 ? currentStroke : const [],
+            isEraserMode,
+            _currentPageIndex == 1 ? currentPosition : null,
+            strokeWidth,
+            eraserWidth,
+          ),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 2,
+            width: MediaQuery.of(context).size.width,
+          ),
+        ),
+      ],
     );
   }
 
@@ -470,7 +559,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 
   void _erase(Offset point) {
-    strokes.removeWhere((stroke) => stroke.any(
+    _getActiveStrokes().removeWhere((stroke) => stroke.any(
         (drawPoint) => (drawPoint.offset - point).distance <= eraserWidth / 2));
   }
 
@@ -578,7 +667,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         isCorrect: isCorrect,
         timeSpent: _elapsedSeconds,
         drawingData: _serializeDrawingData(),
-        strokes: strokes,
+        problemStrokes: problemStrokes,
+        solutionStrokes: solutionStrokes,
       );
 
       // 로딩 닫기
@@ -683,7 +773,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   void _restartProblem() {
     setState(() {
       _isReviewMode = false;
-      strokes.clear();
+      problemStrokes.clear();
+      solutionStrokes.clear();
       currentStroke.clear();
       _elapsedSeconds = 0;
       timerKey.currentState?.resetTimer();
