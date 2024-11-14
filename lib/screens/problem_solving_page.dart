@@ -63,6 +63,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   @override
   void initState() {
     super.initState();
+    _checkProblemState();
     _pageController = PageController(initialPage: 0);
     _pageController.addListener(() {
       if (_pageController.page != null) {
@@ -71,6 +72,37 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         });
       }
     });
+  }
+
+  Future<void> _checkProblemState() async {
+    final user = context.read<AppAuthProvider>().user;
+    if (user == null) return;
+
+    try {
+      final problemState = await _problemSolveService.getProblemState(
+        userId: user.uid,
+        problemId: widget.problem.id,
+      );
+
+      if (problemState['isSolved'] == true) {
+        setState(() {
+          _isReviewMode = true;
+        });
+
+        // 저장된 드로잉 데이터 로드
+        final drawingData = await _problemSolveService.loadLatestDrawingData(
+          userId: user.uid,
+          problemId: widget.problem.id,
+        );
+
+        setState(() {
+          problemStrokes = drawingData['problemStrokes'] ?? [];
+          solutionStrokes = drawingData['solutionStrokes'] ?? [];
+        });
+      }
+    } catch (e) {
+      print('Error checking problem state: $e');
+    }
   }
 
   @override
@@ -93,44 +125,6 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     _strokeWidthOverlay?.remove();
     _colorOverlay = null;
     _strokeWidthOverlay = null;
-  }
-
-  // 드로잉 데이터를 직렬화하는 메서드
-  Map<String, dynamic> _serializeDrawingData() {
-    return {
-      'problemStrokes': problemStrokes.map((strokeList) {
-        return {
-          'points': strokeList
-              .map((point) => {
-                    'offset': {
-                      'dx': point.offset.dx,
-                      'dy': point.offset.dy,
-                    },
-                    'color': {
-                      'value': point.color.value,
-                    },
-                    'strokeWidth': point.strokeWidth,
-                  })
-              .toList(),
-        };
-      }).toList(),
-      'solutionStrokes': solutionStrokes.map((strokeList) {
-        return {
-          'points': strokeList
-              .map((point) => {
-                    'offset': {
-                      'dx': point.offset.dx,
-                      'dy': point.offset.dy,
-                    },
-                    'color': {
-                      'value': point.color.value,
-                    },
-                    'strokeWidth': point.strokeWidth,
-                  })
-              .toList(),
-        };
-      }).toList(),
-    };
   }
 
   @override
@@ -564,30 +558,34 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 
   void _showStopSolvingDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('풀이 중단'),
-          content: Text('현재까지의 풀이과정이 저장되지 않습니다.'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('아니오'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('예'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+    if (_isReviewMode) {
+      _saveAndExit();
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('풀이 중단'),
+            content: Text('현재까지의 풀이과정이 저장되지 않습니다.'),
+            actions: <Widget>[
+              TextButton(
+                child: Text('아니오'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: Text('예'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   void _showAnswerSubmissionDialog() {
@@ -666,7 +664,6 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         submittedAnswer: selectedAnswer,
         isCorrect: isCorrect,
         timeSpent: _elapsedSeconds,
-        drawingData: _serializeDrawingData(),
         problemStrokes: problemStrokes,
         solutionStrokes: solutionStrokes,
       );
@@ -768,6 +765,31 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         );
       },
     );
+  }
+
+  // 문제를 푼 후 저장하고 나가기
+  Future<void> _saveAndExit() async {
+    final user = context.read<AppAuthProvider>().user;
+    if (user == null) return;
+
+    try {
+      await _problemSolveService.saveReviewState(
+        userId: user.uid,
+        problemId: widget.problem.id,
+        problemStrokes: problemStrokes,
+        solutionStrokes: solutionStrokes,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
   }
 
   void _restartProblem() {
