@@ -79,6 +79,63 @@ class UserDataProvider with ChangeNotifier {
     }
   }
 
+  /// 문제를 해결 완료 상태로 표시합니다.
+  Future<void> markProblemAsSolved(String problemId, String attemptId) async {
+    final userId = _firebaseService.currentUser?.uid;
+    if (userId == null) throw Exception('User not logged in');
+
+    await _problemUserDataService.markAsSolved(
+      userId: userId,
+      problemId: problemId,
+      attemptId: attemptId,
+    );
+
+    // 캐시 업데이트
+    if (_problemDataCache.containsKey(problemId)) {
+      _problemDataCache[problemId]?['isSolved'] = true;
+      _problemDataCache[problemId]?['lastAttemptId'] = attemptId;
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> markProblemUnsolved(String problemId) async {
+    final userId = _firebaseService.currentUser?.uid;
+    if (userId == null) throw Exception('User not logged in');
+
+    await _problemUserDataService.markUnsolved(
+      userId: userId,
+      problemId: problemId,
+    );
+
+    // 캐시 업데이트
+    if (_problemDataCache.containsKey(problemId)) {
+      _problemDataCache[problemId]?['isSolved'] = false;
+    }
+
+    notifyListeners();
+  }
+
+  /// 해결된 문제의 드로잉 데이터를 업데이트합니다.
+  Future<void> updateSolvedProblemDrawing(
+      String problemId, String attemptId) async {
+    final userId = _firebaseService.currentUser?.uid;
+    if (userId == null) throw Exception('User not logged in');
+
+    await _problemUserDataService.updateSolvedProblemDrawing(
+      userId: userId,
+      problemId: problemId,
+      attemptId: attemptId,
+    );
+
+    // 캐시 업데이트
+    if (_problemDataCache.containsKey(problemId)) {
+      _problemDataCache[problemId]?['lastAttemptId'] = attemptId;
+    }
+
+    notifyListeners();
+  }
+
   // 특정 문제의 사용자 데이터 조회
   Future<Map<String, dynamic>?> getProblemData(String problemId) async {
     if (_problemDataCache.containsKey(problemId)) {

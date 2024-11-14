@@ -8,6 +8,7 @@ import '../utils/problem_solve_service.dart';
 import '../widgets/drawing_area.dart';
 import '../widgets/timer_widget.dart';
 import '../utils/custom_network_image.dart';
+import '../providers/user_data_provider.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
   final Problem problem;
@@ -79,26 +80,25 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     if (user == null) return;
 
     try {
-      final problemState = await _problemSolveService.getProblemState(
-        userId: user.uid,
-        problemId: widget.problem.id,
-      );
+      final problemData = await context
+          .read<UserDataProvider>()
+          .getProblemData(widget.problem.id);
 
-      if (problemState['isSolved'] == true) {
-        setState(() {
-          _isReviewMode = true;
-        });
+      if (problemData?['isSolved'] == true) {
+        final latestAttemptId = problemData?['lastAttemptId'];
+        if (latestAttemptId != null) {
+          // 저장된 드로잉 데이터 로드
+          final drawingData =
+              await _problemSolveService.loadDrawingData(latestAttemptId);
 
-        // 저장된 드로잉 데이터 로드
-        final drawingData = await _problemSolveService.loadLatestDrawingData(
-          userId: user.uid,
-          problemId: widget.problem.id,
-        );
-
-        setState(() {
-          problemStrokes = drawingData['problemStrokes'] ?? [];
-          solutionStrokes = drawingData['solutionStrokes'] ?? [];
-        });
+          if (mounted) {
+            setState(() {
+              _isReviewMode = true;
+              problemStrokes = drawingData['problemStrokes'] ?? [];
+              solutionStrokes = drawingData['solutionStrokes'] ?? [];
+            });
+          }
+        }
       }
     } catch (e) {
       print('Error checking problem state: $e');
@@ -141,7 +141,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
           title: Text(widget.problem.title),
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
-            onPressed: _showStopSolvingDialog,
+            onPressed: !_isReviewMode ? _showStopSolvingDialog : _saveAndExit,
           ),
           actions: [
             TextButton(
@@ -558,34 +558,30 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 
   void _showStopSolvingDialog() {
-    if (_isReviewMode) {
-      _saveAndExit();
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('풀이 중단'),
-            content: Text('현재까지의 풀이과정이 저장되지 않습니다.'),
-            actions: <Widget>[
-              TextButton(
-                child: Text('아니오'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              TextButton(
-                child: Text('예'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('풀이 중단'),
+          content: Text('현재까지의 풀이과정이 저장되지 않습니다.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('아니오'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('예'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showAnswerSubmissionDialog() {
@@ -630,6 +626,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   // 정답 제출 처리
   Future<void> _handleAnswerSubmission(String selectedAnswer) async {
     final authProvider = context.read<AppAuthProvider>();
+    final userDataProvider = context.read<UserDataProvider>();
     final user = authProvider.user;
 
     if (user == null) {
@@ -658,7 +655,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
       final isCorrect = selectedAnswer == widget.problem.correctAnswer;
 
       // Firestore에 데이터 저장
-      await _problemSolveService.saveAttempt(
+      final attemptId = await _problemSolveService.saveAttempt(
         userId: user.uid,
         problemId: widget.problem.id,
         submittedAnswer: selectedAnswer,
@@ -667,6 +664,13 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         problemStrokes: problemStrokes,
         solutionStrokes: solutionStrokes,
       );
+
+      // UI 상태 업데이트
+      if (attemptId != null) {
+        await userDataProvider.markProblemAsSolved(
+            widget.problem.id, attemptId // attemptId 전달
+            );
+      }
 
       // 로딩 닫기
       Navigator.of(context).pop();
@@ -792,15 +796,27 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     }
   }
 
-  void _restartProblem() {
-    setState(() {
-      _isReviewMode = false;
-      problemStrokes.clear();
-      solutionStrokes.clear();
-      currentStroke.clear();
-      _elapsedSeconds = 0;
-      timerKey.currentState?.resetTimer();
-    });
+  void _restartProblem() async {
+    try {
+      await context.read<UserDataProvider>().markProblemUnsolved(
+            widget.problem.id,
+          );
+
+      setState(() {
+        _isReviewMode = false;
+        problemStrokes.clear();
+        solutionStrokes.clear();
+        currentStroke.clear();
+        _elapsedSeconds = 0;
+        timerKey.currentState?.resetTimer();
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('문제 재시작 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
   }
 
   String _formatTime(int seconds) {

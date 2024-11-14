@@ -86,7 +86,7 @@ class ProblemSolveService {
   }
 
   // '정답 제출' 클릭 시 호출
-  Future<void> saveAttempt({
+  Future<String?> saveAttempt({
     required String userId,
     required String problemId,
     required String submittedAnswer,
@@ -150,6 +150,7 @@ class ProblemSolveService {
 
     // 트랜잭션 완료 후 drawing data 저장
     await _saveDrawingData(attemptId, problemStrokes, solutionStrokes);
+    return attemptId;
   }
 
   // 리뷰 모드에서의 저장 (attempts 증가 없음)
@@ -159,30 +160,44 @@ class ProblemSolveService {
     required List<List<DrawingPoint>> problemStrokes,
     required List<List<DrawingPoint>> solutionStrokes,
   }) async {
-    final userProblemRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('problemSolveHistory')
-        .doc(problemId);
+    final userProblemDoc =
+        _firestore.collection('userProblemData').doc('${userId}_${problemId}');
 
-    // 현재 문서의 마지막 attemptId 가져오기
-    final doc = await userProblemRef.get();
-    final latestAttemptNumber = doc.data()?['totalAttempts'] ?? 1;
-    final attemptDoc = await userProblemRef
-        .collection('attempts')
-        .doc(latestAttemptNumber.toString())
-        .get();
-    final attemptId = attemptDoc.data()?['attemptId'];
+    try {
+      await _firestore.runTransaction((transaction) async {
+        // 1. 현재 문서 상태 및 latestAttemptId 확인
+        final docSnapshot = await transaction.get(userProblemDoc);
+        if (!docSnapshot.exists) {
+          throw Exception('Problem attempt data not found');
+        }
 
-    if (attemptId != null) {
-      // 기존 드로잉 데이터 업데이트
-      await _saveDrawingData(attemptId, problemStrokes, solutionStrokes);
+        final attemptId = docSnapshot.data()?['latestAttemptId'];
+        if (attemptId == null || attemptId.isEmpty) {
+          throw Exception('No attempt ID found');
+        }
 
-      // problemSolveHistory 문서 업데이트
-      await userProblemRef.update({
-        'isSolved': true,
-        'lastUpdatedAt': FieldValue.serverTimestamp(),
+        // 2. userProblemData 문서 업데이트
+        transaction.update(userProblemDoc, {
+          'lastUpdatedAt': FieldValue.serverTimestamp(),
+        });
+
+        // 3. drawingAttempts 문서 업데이트 표시
+        final attemptRef =
+            _firestore.collection('drawingAttempts').doc(attemptId);
+        transaction.update(attemptRef, {
+          'lastReviewedAt': FieldValue.serverTimestamp(),
+        });
       });
+
+      // 트랜잭션 완료 후 drawing data 저장
+      final docSnapshot = await userProblemDoc.get();
+      final attemptId = docSnapshot.data()?['latestAttemptId'];
+      if (attemptId != null) {
+        await _saveDrawingData(attemptId, problemStrokes, solutionStrokes);
+      }
+    } catch (e) {
+      print('Error in saveReviewState: $e');
+      rethrow;
     }
   }
 

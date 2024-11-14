@@ -105,6 +105,51 @@ class ProblemUserDataService {
         .toList();
   }
 
+  /// 문제를 해결 완료 상태로 표시하고 최종 드로잉 데이터를 저장합니다.
+  Future<void> markAsSolved({
+    required String userId,
+    required String problemId,
+    required String attemptId,
+  }) async {
+    final docRef = _getDocumentRef(userId, problemId);
+
+    await docRef.set({
+      'userId': userId,
+      'problemId': problemId,
+      'isSolved': true,
+      'lastAttemptId': attemptId,
+      'lastUpdatedAt': FieldValue.serverTimestamp(),
+      'totalAttempts': 1,
+      'correctAttempts': 1,
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> markUnsolved({
+    required String userId,
+    required String problemId,
+  }) async {
+    final docRef = _getDocumentRef(userId, problemId);
+
+    await docRef.set({
+      'isSolved': false,
+      'lastUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// 해결된 문제의 드로잉 데이터를 업데이트합니다.
+  Future<void> updateSolvedProblemDrawing({
+    required String userId,
+    required String problemId,
+    required String attemptId,
+  }) async {
+    final docRef = _getDocumentRef(userId, problemId);
+
+    await docRef.update({
+      'lastAttemptId': attemptId,
+      'lastUpdatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// 특정 사용자가 해결한 문제 ID 목록을 가져옵니다.
   Future<List<String>> getSolvedProblemIds(String userId) async {
     final querySnapshot = await _firestore
