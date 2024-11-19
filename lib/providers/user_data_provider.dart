@@ -67,12 +67,8 @@ class UserDataProvider with ChangeNotifier {
   // Refresh user data
   Future<void> refreshUserData(String uid) async {
     try {
-      _status = UserDataStatus.loading;
-      notifyListeners();
-
       DocumentSnapshot doc = await _firebaseService.getDocument('users', uid);
       _userData = doc.data() as Map<String, dynamic>?;
-      _status = UserDataStatus.loaded;
       notifyListeners();
     } catch (e) {
       _setError(e.toString());

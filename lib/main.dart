@@ -177,27 +177,64 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  bool _isFirstLaunch = true;
+  bool _hasShownWelcome = false;
   int _selectedIndex = 0;
+  Function? _removeListener;
 
   @override
   void initState() {
     super.initState();
 
-    if (_isFirstLaunch) {
+    if (!_hasShownWelcome) {
       final userDataProvider = context.read<UserDataProvider>();
-      userDataProvider.addListener(() {
-        if (userDataProvider.status == UserDataStatus.loaded && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${userDataProvider.nickname ?? 'Guest'} 님 환영합니다'),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-          _isFirstLaunch = false;
+
+      // ScaffoldMessenger의 현재 SnackBar를 제거하고 새로운 SnackBar를 표시하는 함수
+      void showWelcomeSnackBar() {
+        if (!mounted) return;
+
+        // 현재 표시 중인 SnackBar를 모두 제거
+        ScaffoldMessenger.of(context).clearSnackBars();
+
+        // 새로운 SnackBar 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${userDataProvider.nickname ?? 'Guest'} 님 환영합니다'),
+            duration: const Duration(seconds: 1),
+            // 새로운 SnackBar가 이전 SnackBar를 대체하지 않도록 설정
+            behavior: SnackBarBehavior.fixed,
+          ),
+        );
+      }
+
+      void showWelcomeMessage() {
+        if (userDataProvider.status == UserDataStatus.loaded &&
+            !_hasShownWelcome &&
+            mounted) {
+          // 단일 프레임에서 한 번만 실행되도록 보장
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_hasShownWelcome) return; // 이미 표시했다면 중단
+            _hasShownWelcome = true;
+            showWelcomeSnackBar();
+            _removeListener?.call();
+          });
         }
-      });
+      }
+
+      _removeListener =
+          () => userDataProvider.removeListener(showWelcomeMessage);
+      userDataProvider.addListener(showWelcomeMessage);
+
+      if (userDataProvider.status == UserDataStatus.loaded) {
+        showWelcomeMessage();
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    // 위젯이 dispose될 때 리스너 제거
+    _removeListener?.call();
+    super.dispose();
   }
 
   @override
@@ -205,7 +242,7 @@ class _MainScreenState extends State<MainScreen> {
     super.didChangeDependencies();
     final authProvider = Provider.of<AppAuthProvider>(context);
     if (authProvider.status == AuthStatus.authenticated) {
-      _isFirstLaunch = true;
+      _hasShownWelcome = false;
     }
   }
 
