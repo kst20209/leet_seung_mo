@@ -27,19 +27,6 @@ class MyProblemPage extends StatelessWidget {
             children: [
               _buildDataSection(
                 context: context,
-                title: '풀던 문제',
-                emptyMessage: '최근에 푼 문제가 없습니다',
-                future: userDataProvider.getRecentlySolvedProblems(),
-                onMorePressed: () => _navigateToProblemList(
-                  context,
-                  '풀던 문제',
-                  ProblemListType.recentlySolved,
-                ),
-                onItemTap: (item, items) =>
-                    _navigateToProblemSolving(context, item, items),
-              ),
-              _buildDataSection(
-                context: context,
                 title: '나의 문제꾸러미',
                 emptyMessage: '구매한 문제꾸러미가 없습니다',
                 future: userDataProvider.getPurchasedProblemSets(),
@@ -57,6 +44,19 @@ class MyProblemPage extends StatelessWidget {
                   context,
                   '즐겨찾기한 문제',
                   ProblemListType.favorite,
+                ),
+                onItemTap: (item, items) =>
+                    _navigateToProblemSolving(context, item, items),
+              ),
+              _buildDataSection(
+                context: context,
+                title: '오답노트',
+                emptyMessage: '틀린 문제가 없습니다',
+                future: userDataProvider.getIncorrectProblems(),
+                onMorePressed: () => _navigateToProblemList(
+                  context,
+                  '오답노트',
+                  ProblemListType.incorrect,
                 ),
                 onItemTap: (item, items) =>
                     _navigateToProblemSolving(context, item, items),

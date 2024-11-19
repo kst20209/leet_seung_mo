@@ -689,8 +689,8 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
       // UI 상태 업데이트
       if (attemptId != null) {
         await userDataProvider.markProblemAsSolved(
-            widget.problem.id, attemptId // attemptId 전달
-            );
+          widget.problem.id, attemptId, isCorrect, // attemptId 전달
+        );
       }
 
       // 로딩 닫기

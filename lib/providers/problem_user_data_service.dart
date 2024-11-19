@@ -110,6 +110,7 @@ class ProblemUserDataService {
     required String userId,
     required String problemId,
     required String attemptId,
+    required bool isCorrect,
   }) async {
     final docRef = _getDocumentRef(userId, problemId);
 
@@ -118,6 +119,7 @@ class ProblemUserDataService {
       'problemId': problemId,
       'isSolved': true,
       'lastAttemptId': attemptId,
+      'lastAttemptIsCorrect': isCorrect,
       'lastUpdatedAt': FieldValue.serverTimestamp(),
       'totalAttempts': 1,
       'correctAttempts': 1,

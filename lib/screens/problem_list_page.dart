@@ -7,7 +7,7 @@ import '../providers/user_data_provider.dart';
 
 enum ProblemListType {
   problemSet, // 문제꾸러미에 속한 문제들
-  recentlySolved, // 최근 푼 문제들
+  incorrect, // 틀린 문제들
   favorite, // 즐겨찾기한 문제들
 }
 
@@ -49,7 +49,7 @@ class _ProblemListPageState extends State<ProblemListPage> {
         return List.from(problems)
           ..sort((a, b) =>
               _extractNumber(a.title).compareTo(_extractNumber(b.title)));
-      case ProblemListType.recentlySolved:
+      case ProblemListType.incorrect:
         // 최근 푼 문제는 현재 순서 유지
         return problems;
       case ProblemListType.favorite:
@@ -91,8 +91,8 @@ class _ProblemListPageState extends State<ProblemListPage> {
           problems = _sortProblems(problems);
           break;
 
-        case ProblemListType.recentlySolved:
-          problems = await userDataProvider.getRecentlySolvedProblems();
+        case ProblemListType.incorrect:
+          problems = await userDataProvider.getIncorrectProblems();
           problems = _sortProblems(problems);
           break;
 
@@ -122,8 +122,8 @@ class _ProblemListPageState extends State<ProblemListPage> {
     switch (widget.type ?? ProblemListType.favorite) {
       case ProblemListType.problemSet:
         return '문제꾸러미에 문제가 없습니다';
-      case ProblemListType.recentlySolved:
-        return '최근 푼 문제가 없습니다';
+      case ProblemListType.incorrect:
+        return '틀린 문제가 없습니다';
       case ProblemListType.favorite:
         return '즐겨찾기한 문제가 없습니다';
     }

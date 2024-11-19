@@ -76,7 +76,8 @@ class UserDataProvider with ChangeNotifier {
   }
 
   /// 문제를 해결 완료 상태로 표시합니다.
-  Future<void> markProblemAsSolved(String problemId, String attemptId) async {
+  Future<void> markProblemAsSolved(
+      String problemId, String attemptId, bool isCorrect) async {
     final userId = _firebaseService.currentUser?.uid;
     if (userId == null) throw Exception('User not logged in');
 
@@ -84,6 +85,7 @@ class UserDataProvider with ChangeNotifier {
       userId: userId,
       problemId: problemId,
       attemptId: attemptId,
+      isCorrect: isCorrect,
     );
 
     // 캐시 업데이트
@@ -215,6 +217,48 @@ class UserDataProvider with ChangeNotifier {
     }
   }
 
+  // 틀린 문제 목록 조회
+  Future<List<Problem>> getIncorrectProblems() async {
+    try {
+      final userId = _firebaseService.currentUser?.uid;
+      if (userId == null) return [];
+
+      // lastAttemptIsCorrect = false인 문제 ID 가져오기
+      final querySnapshot = await _firestore
+          .collection('userProblemData')
+          .where('userId', isEqualTo: userId)
+          .where('lastAttemptIsCorrect', isEqualTo: false)
+          .get();
+
+      final incorrectProblemIds =
+          querySnapshot.docs.map((doc) => doc['problemId'] as String).toList();
+      if (incorrectProblemIds.isEmpty) return [];
+
+      // 문제 상세 정보 가져오기
+      final problemsSnapshot = await _firestore
+          .collection('problems')
+          .where(FieldPath.documentId, whereIn: incorrectProblemIds)
+          .get();
+
+      return problemsSnapshot.docs
+          .map((doc) => Problem(
+                id: doc.id,
+                title: doc['title'],
+                description: doc['description'],
+                problemImage: doc['problemImage'],
+                solutionImage: doc['solutionImage'],
+                imageUrl: doc['imageUrl'],
+                tags: List<String>.from(doc['tags']),
+                problemSetId: doc['problemSetId'],
+                correctAnswer: doc['correctAnswer'],
+              ))
+          .toList();
+    } catch (e) {
+      _setError('Failed to load incorrect problems: $e');
+      return [];
+    }
+  }
+
   // 캐시 무효화
   void invalidateProblemCache(String problemId) {
     _problemDataCache.remove(problemId);
@@ -286,51 +330,6 @@ class UserDataProvider with ChangeNotifier {
           .toList();
     } catch (e) {
       _setError('Failed to load problems: $e');
-      return [];
-    }
-  }
-
-  // Get recently solved problems
-  Future<List<Problem>> getRecentlySolvedProblems() async {
-    try {
-      if (_userData == null) return [];
-
-      final recentProblemIds =
-          List<String>.from(_userData?['lastSolvedProblems'] ?? []);
-      if (recentProblemIds.isEmpty) return [];
-
-      List<Problem> allProblems = [];
-      for (var i = 0; i < recentProblemIds.length; i += 10) {
-        var end = (i + 10 < recentProblemIds.length)
-            ? i + 10
-            : recentProblemIds.length;
-        var chunk = recentProblemIds.sublist(i, end);
-
-        final querySnapshot = await _firestore
-            .collection('problems')
-            .where(FieldPath.documentId, whereIn: chunk)
-            .get();
-
-        final problems = querySnapshot.docs
-            .map((doc) => Problem(
-                  id: doc.id,
-                  title: doc['title'],
-                  description: doc['description'],
-                  problemImage: doc['problemImage'],
-                  solutionImage: doc['solutionImage'],
-                  imageUrl: doc['imageUrl'],
-                  tags: List<String>.from(doc['tags']),
-                  problemSetId: doc['problemSetId'],
-                  correctAnswer: doc['correctAnswer'],
-                ))
-            .toList();
-
-        allProblems.addAll(problems);
-      }
-
-      return allProblems;
-    } catch (e) {
-      _setError('Failed to load recently solved problems: $e');
       return [];
     }
   }
