@@ -9,6 +9,7 @@ import '../widgets/drawing_area.dart';
 import '../widgets/timer_widget.dart';
 import '../utils/custom_network_image.dart';
 import '../providers/user_data_provider.dart';
+import 'dart:math';
 
 class ProblemSolvingPage extends StatefulWidget {
   final Problem problem;
@@ -179,6 +180,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             Expanded(
               child: DrawingArea(
                 onStylusDown: (event) {
+                  _removeOverlays();
                   setState(() {
                     // 현재 스크롤 위치를 고려한 오프셋 계산
                     final scrollOffset = _currentScrollController.hasClients
@@ -216,9 +218,11 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                 onStylusUp: (event) {
                   setState(() {
                     currentPosition = null;
-                    if (!isEraserMode) {
-                      _getActiveStrokes().add(List.from(currentStroke));
+                    if (!isEraserMode && currentStroke.isNotEmpty) {
+                      final simplifiedStroke = _simplifyStroke(currentStroke);
+                      _getActiveStrokes().add(List.from(simplifiedStroke));
                       currentStroke.clear();
+                      _repaintNotifier.value++;
                     }
                   });
                 },
@@ -265,18 +269,28 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             ),
           ),
         ),
-        CustomPaint(
-          painter: DrawingPainter(
-            problemStrokes,
-            _currentPageIndex == 0 ? currentStroke : const [],
-            isEraserMode,
-            _currentPageIndex == 0 ? currentPosition : null,
-            strokeWidth,
-            eraserWidth,
+        RepaintBoundary(
+          child: CustomPaint(
+            painter: CompletedStrokesPainter(problemStrokes),
+            size: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 2,
+            ),
           ),
-          child: Container(
-            height: MediaQuery.of(context).size.height * 2,
-            width: MediaQuery.of(context).size.width,
+        ),
+        RepaintBoundary(
+          child: CustomPaint(
+            painter: CurrentStrokePainter(
+              _currentPageIndex == 0 ? currentStroke : const [],
+              isEraserMode,
+              _currentPageIndex == 0 ? currentPosition : null,
+              strokeWidth,
+              eraserWidth,
+            ),
+            size: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 2,
+            ),
           ),
         ),
       ],
@@ -318,18 +332,28 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
             ],
           ),
         ),
-        CustomPaint(
-          painter: DrawingPainter(
-            solutionStrokes,
-            _currentPageIndex == 1 ? currentStroke : const [],
-            isEraserMode,
-            _currentPageIndex == 1 ? currentPosition : null,
-            strokeWidth,
-            eraserWidth,
+        RepaintBoundary(
+          child: CustomPaint(
+            painter: CompletedStrokesPainter(solutionStrokes),
+            size: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 2,
+            ),
           ),
-          child: Container(
-            height: MediaQuery.of(context).size.height * 2,
-            width: MediaQuery.of(context).size.width,
+        ),
+        RepaintBoundary(
+          child: CustomPaint(
+            painter: CurrentStrokePainter(
+              _currentPageIndex == 1 ? currentStroke : const [],
+              isEraserMode,
+              _currentPageIndex == 1 ? currentPosition : null,
+              strokeWidth,
+              eraserWidth,
+            ),
+            size: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 2,
+            ),
           ),
         ),
       ],
@@ -415,12 +439,20 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 
   void _toggleColorMenu() {
+    if (_colorOverlay != null) {
+      _removeOverlays();
+      return;
+    }
     _removeOverlays();
     _colorOverlay = _createColorOverlay();
     Overlay.of(context).insert(_colorOverlay!);
   }
 
   void _toggleStrokeWidthMenu() {
+    if (_strokeWidthOverlay != null) {
+      _removeOverlays();
+      return;
+    }
     _removeOverlays();
     _strokeWidthOverlay = _createStrokeWidthOverlay();
     Overlay.of(context).insert(_strokeWidthOverlay!);
@@ -573,12 +605,80 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     );
   }
 
+  void _updateCompletedStrokes(List<List<DrawingPoint>> newStrokes) {
+    setState(() {
+      if (_currentPageIndex == 0) {
+        problemStrokes = newStrokes;
+      } else {
+        solutionStrokes = newStrokes;
+      }
+    });
+  }
+
   void _erase(Offset point) {
-    _getActiveStrokes().removeWhere((stroke) => stroke.any(
-        (drawPoint) => (drawPoint.offset - point).distance <= eraserWidth / 2));
+    final eraserRadius = eraserWidth / 2;
+
+    var activeStrokes = List<List<DrawingPoint>>.from(_getActiveStrokes());
+    bool strokesChanged = false;
+
+    activeStrokes.removeWhere((stroke) {
+      bool shouldRemove = stroke.any(
+          (drawPoint) => (drawPoint.offset - point).distance <= eraserRadius);
+      if (shouldRemove) strokesChanged = true;
+      return shouldRemove;
+    });
+
+    if (strokesChanged) {
+      _updateCompletedStrokes(activeStrokes);
+    }
+
+    if (currentStroke.any(
+        (drawPoint) => (drawPoint.offset - point).distance <= eraserRadius)) {
+      currentStroke.clear();
+    }
+  }
+
+  List<DrawingPoint> _simplifyStroke(List<DrawingPoint> points,
+      {double epsilon = 0.3}) {
+    if (points.length <= 2) return points;
+
+    double maxDistance = 0;
+    int index = 0;
+    final start = points.first;
+    final end = points.last;
+
+    for (int i = 1; i < points.length - 1; i++) {
+      double distance = _perpendicularDistance(points[i], start, end);
+      if (distance > maxDistance) {
+        index = i;
+        maxDistance = distance;
+      }
+    }
+
+    if (maxDistance > epsilon) {
+      var firstHalf = _simplifyStroke(points.sublist(0, index + 1));
+      var secondHalf = _simplifyStroke(points.sublist(index));
+      return [...firstHalf.sublist(0, firstHalf.length - 1), ...secondHalf];
+    }
+
+    return [points.first, points.last];
+  }
+
+  double _perpendicularDistance(
+      DrawingPoint point, DrawingPoint start, DrawingPoint end) {
+    final area = ((end.offset.dx - start.offset.dx) *
+                (start.offset.dy - point.offset.dy) -
+            (start.offset.dx - point.offset.dx) *
+                (end.offset.dy - start.offset.dy))
+        .abs();
+    final bottom = sqrt((end.offset.dx - start.offset.dx) *
+            (end.offset.dx - start.offset.dx) +
+        (end.offset.dy - start.offset.dy) * (end.offset.dy - start.offset.dy));
+    return area / bottom;
   }
 
   void _showStopSolvingDialog() {
+    _removeOverlays();
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -607,6 +707,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
   void _showAnswerSubmissionDialog() {
     timerKey.currentState?.pauseTimer();
+    _removeOverlays();
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -765,6 +866,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 
   void _showRestartConfirmation() {
+    _removeOverlays();
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -797,6 +899,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     final user = context.read<AppAuthProvider>().user;
     if (user == null) return;
 
+    _removeOverlays();
     try {
       await _problemSolveService.saveReviewState(
         userId: user.uid,
@@ -829,6 +932,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         solutionStrokes.clear();
         currentStroke.clear();
         _elapsedSeconds = 0;
+        _repaintNotifier.value = 0;
         timerKey.currentState?.resetTimer();
       });
     } catch (e) {
@@ -847,21 +951,59 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
   }
 }
 
-class DrawingPainter extends CustomPainter {
+final ValueNotifier<int> _repaintNotifier = ValueNotifier(0);
+
+class CompletedStrokesPainter extends CustomPainter {
   final List<List<DrawingPoint>> strokes;
+
+  CompletedStrokesPainter(this.strokes) : super(repaint: _repaintNotifier);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (var stroke in strokes) {
+      _drawStroke(canvas, stroke);
+    }
+  }
+
+  void _drawStroke(Canvas canvas, List<DrawingPoint> stroke) {
+    for (int i = 0; i < stroke.length - 1; i++) {
+      canvas.drawLine(
+          stroke[i].offset,
+          stroke[i + 1].offset,
+          Paint()
+            ..color = stroke[i].color
+            ..strokeWidth = stroke[i].strokeWidth
+            ..strokeCap = StrokeCap.round);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CompletedStrokesPainter oldDelegate) {
+    if (oldDelegate.strokes.length != strokes.length) return true;
+
+    for (int i = 0; i < strokes.length; i++) {
+      if (oldDelegate.strokes[i].length != strokes[i].length) return true;
+      for (int j = 0; j < strokes[i].length; j++) {
+        if (oldDelegate.strokes[i][j] != strokes[i][j]) return true;
+      }
+    }
+
+    return false;
+  }
+}
+
+class CurrentStrokePainter extends CustomPainter {
   final List<DrawingPoint> currentStroke;
   final bool isEraserMode;
   final Offset? currentPosition;
   final double strokeWidth;
   final double eraserWidth;
 
-  DrawingPainter(this.strokes, this.currentStroke, this.isEraserMode,
+  CurrentStrokePainter(this.currentStroke, this.isEraserMode,
       this.currentPosition, this.strokeWidth, this.eraserWidth);
+
   @override
   void paint(Canvas canvas, Size size) {
-    for (var stroke in strokes) {
-      _drawStroke(canvas, stroke);
-    }
     _drawStroke(canvas, currentStroke);
 
     if (isEraserMode && currentPosition != null) {
@@ -892,7 +1034,9 @@ class DrawingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CurrentStrokePainter oldDelegate) {
+    return true;
+  }
 }
 
 class DrawingPoint {
@@ -901,4 +1045,15 @@ class DrawingPoint {
   final double strokeWidth;
 
   DrawingPoint(this.offset, this.color, this.strokeWidth);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DrawingPoint &&
+          offset == other.offset &&
+          color == other.color &&
+          strokeWidth == other.strokeWidth;
+
+  @override
+  int get hashCode => Object.hash(offset, color, strokeWidth);
 }
