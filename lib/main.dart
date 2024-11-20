@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'screens/purchase_point_page.dart';
 import 'utils/firebase_service.dart';
 
 // providers
@@ -137,6 +138,8 @@ class MyApp extends StatelessWidget {
             ),
         '/subject_list': (context) => const ProblemSetListPage(),
         '/problem_list': (context) => const ProblemListPage(title: ''),
+        '/purchase_point': (context) => const PurchasePointPage(),
+        '/problem_shop': (context) => const ProblemShopPage(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/problem_solving') {

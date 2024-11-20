@@ -3,13 +3,15 @@ import '../utils/custom_network_image.dart';
 import 'dart:async';
 
 class PromoBanner extends StatefulWidget {
-  final List<Map<String, String>> bannerData;
+  final List<Map<String, dynamic>> bannerData;
   final Duration autoScrollDuration;
+  final Function(Map<String, dynamic>)? onTap;
 
   PromoBanner({
     Key? key,
     required this.bannerData,
     this.autoScrollDuration = const Duration(seconds: 5),
+    this.onTap,
   }) : super(key: key);
 
   @override
@@ -88,50 +90,53 @@ class _PromoBannerState extends State<PromoBanner> {
     );
   }
 
-  Widget _buildBannerItem(Map<String, String> data) {
-    return Container(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          CustomNetworkImage(
-            imageUrl: Uri.encodeFull(data['imageUrl']!),
-            fit: BoxFit.cover,
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+  Widget _buildBannerItem(Map<String, dynamic> data) {
+    return GestureDetector(
+      onTap: () => widget.onTap?.call(data),
+      child: Container(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CustomNetworkImage(
+              imageUrl: data['imageUrl'] as String,
+              fit: BoxFit.cover,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data['title']!,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineMedium
-                      ?.copyWith(color: Colors.white),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  data['subtitle']!,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: Colors.white),
-                ),
-              ],
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['title'] as String,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(color: Colors.white),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    data['subtitle'] as String,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: Colors.white),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

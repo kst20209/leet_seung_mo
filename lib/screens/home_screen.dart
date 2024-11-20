@@ -1,159 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_data_provider.dart';
 import '../widgets/promo_banner.dart';
 import '../widgets/section_title.dart';
 import '../widgets/horizontal_subject_list.dart';
-import '../utils/problem_data.dart';
-import '../utils/custom_network_image.dart';
 import '../screens/problem_solving_page.dart';
 import '../screens/problem_list_page.dart';
 import '../models/models.dart';
+import '../utils/home_data_service.dart';
 
-class HomeScreen extends StatelessWidget {
-  final List<Map<String, String>> promoData = [
-    {
-      'imageUrl':
-          'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail1.png?alt=media&token=03a39d6d-35dd-495f-8533-6e5171fed942',
-      'title': '리승모 론칭 이벤트!',
-      'subtitle': '상점에서 포인트를 할인받고 구입하세요',
-    },
-    {
-      'imageUrl':
-          'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/Thumbnail3.png?alt=media&token=c01bbb55-145d-4af9-819c-2735d03f997b',
-      'title': '새 무료 문제 도착',
-      'subtitle': '새로 도착한 무료 문제를 확인하세요',
-    },
-    {
-      'imageUrl':
-          'https://firebasestorage.googleapis.com/v0/b/leet-exam.appspot.com/o/stars_lily.png?alt=media&token=262dc9d5-7838-43b6-815c-5f2714ca8c29',
-      'title': '별점 이벤트',
-      'subtitle': '앱 스토어에 평가를 남기고 무료 포인트 받아가세요!',
-    },
-  ];
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final HomeDataService _homeDataService = HomeDataService();
+
+  Future<void> _handlePromotionTap(Map<String, dynamic> promoBanners) async {
+    _homeDataService.handlePromotionAction(context, promoBanners['action']);
+  }
+
+  Widget _buildDataSection<T>({
+    required String title,
+    required Future<List<T>> future,
+    required Function(GenericItem, List<T>) onItemTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SectionTitle(title),
+        ),
+        FutureBuilder<List<T>>(
+          future: future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(child: Text('오류가 발생했습니다: ${snapshot.error}'));
+            }
+
+            final items = snapshot.data ?? [];
+            return HorizontalItemList(
+              items: items.map((item) => convertToGenericItem(item)).toList(),
+              onItemTap: (item) => onItemTap(item, items),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPurchasedProblemSets() {
+    return Consumer<UserDataProvider>(
+      builder: (context, userDataProvider, _) {
+        return _buildDataSection<ProblemSet>(
+          title: '나의 문제꾸러미',
+          future: userDataProvider
+              .getPurchasedProblemSets(), // watch를 통한 Provider 사용
+          onItemTap: (item, items) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProblemListPage(
+                  title: item.title,
+                  type: ProblemListType.problemSet,
+                  problemSetId: item.id,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('리승모'),
+        title: const Text('리승모'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            PromoBanner(bannerData: promoData),
-            SectionTitle('풀던 문제 바로가기'),
-            HorizontalItemList(
-              items: recentlyAttemptedProblemIds
-                  .map((id) => convertToGenericItem(problems[id]!))
-                  .toList(),
-              onItemTap: (item) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProblemSolvingPage(
-                      problem: problems[item.id]!,
-                    ),
-                  ),
-                );
-              },
-            ),
-            SectionTitle('오늘의 무료 문제'),
-            HorizontalItemList(
-              items: freeProblemToday.map(convertToGenericItem).toList(),
-              onItemTap: (item) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProblemSolvingPage(
-                      problem:
-                          freeProblemToday.firstWhere((p) => p.id == item.id),
-                    ),
-                  ),
-                );
-              },
-            ),
-            SectionTitle('추천 문제꾸러미'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  for (int i = 0; i < recommendedProblemSets.length; i += 2)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildProblemSetCard(
-                                context, recommendedProblemSets[i]),
-                          ),
-                          if (i + 1 < recommendedProblemSets.length) ...[
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: _buildProblemSetCard(
-                                  context, recommendedProblemSets[i + 1]),
-                            ),
-                          ],
-                        ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          setState(() {}); // 전체 화면 새로고침
+        },
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FutureBuilder<List<Map<String, dynamic>>>(
+                future: _homeDataService.getActivePromotions(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('배너를 불러올 수 없습니다.'));
+                  }
+
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  return PromoBanner(
+                    bannerData: snapshot.data!,
+                    onTap: _handlePromotionTap,
+                  );
+                },
+              ),
+              _buildDataSection<Problem>(
+                title: '오늘의 무료 문제',
+                future: _homeDataService.getTodayFreeProblems(),
+                onItemTap: (item, items) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProblemSolvingPage(
+                        problem: items.firstWhere((p) => p.id == item.id),
                       ),
                     ),
-                ],
+                  );
+                },
               ),
-            ),
-            SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProblemSetCard(BuildContext context, ProblemSet problemSet) {
-    return Card(
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProblemListPage(
-                title: problemSet.title,
-                type: ProblemListType.problemSet,
-                problemSetId: problemSet.id,
-              ),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-              child: CustomNetworkImage(
-                imageUrl: problemSet.imageUrl,
-                height: 100,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    problemSet.title,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    problemSet.description,
-                    style: TextStyle(color: Colors.grey),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
+              _buildPurchasedProblemSets(),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
