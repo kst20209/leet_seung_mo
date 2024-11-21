@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'mypage/inquiry_page.dart';
 import 'mypage/point_transaction_history_page.dart';
 import 'dart:convert';
 
@@ -189,7 +190,18 @@ class _MyPageState extends State<MyPage> {
           );
         },
       },
-      {'title': '문의하기', 'icon': Icons.help},
+      {
+        'title': '문의하기',
+        'icon': Icons.help,
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const InquiryPage(),
+            ),
+          );
+        },
+      },
       {'title': '회사 정보', 'icon': Icons.info},
       {'title': '개인정보처리방침', 'icon': Icons.security},
       {'title': '이용약관', 'icon': Icons.description},
