@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'mypage/point_transaction_history_page.dart';
 import 'dart:convert';
 
 import '../providers/user_data_provider.dart';
@@ -175,9 +176,20 @@ class _MyPageState extends State<MyPage> {
 
   Widget _buildSettingsList(BuildContext context) {
     List<Map<String, dynamic>> settings = [
-      {'title': '나의 구입 내역', 'icon': Icons.history},
+      {
+        'title': '포인트 사용내역',
+        'icon': Icons.history,
+        'onTap': () {
+          print('탭 확인');
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PointTransactionHistoryPage(),
+            ),
+          );
+        },
+      },
       {'title': '문의하기', 'icon': Icons.help},
-      {'title': '알림 설정', 'icon': Icons.notifications},
       {'title': '회사 정보', 'icon': Icons.info},
       {'title': '개인정보처리방침', 'icon': Icons.security},
       {'title': '이용약관', 'icon': Icons.description},
@@ -187,13 +199,14 @@ class _MyPageState extends State<MyPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('설정', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text('고객 지원',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
         ...settings.map((setting) => ListTile(
               leading: Icon(setting['icon']),
               title: Text(setting['title']),
               trailing: Icon(Icons.chevron_right),
-              onTap: () {},
+              onTap: setting['onTap'],
             )),
       ],
     );

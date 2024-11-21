@@ -260,10 +260,6 @@ class PointTransactionService {
         query = query.where('type', isEqualTo: type.toString());
       }
 
-      if (limit != null) {
-        query = query.limit(limit);
-      }
-
       final snapshot = await query.get();
       return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
