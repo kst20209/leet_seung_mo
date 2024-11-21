@@ -294,6 +294,9 @@ class UserDataProvider with ChangeNotifier {
                   subjectId: doc['subjectId'],
                   price: doc['price'],
                   totalProblems: doc['totalProblems'],
+                  category: doc['category'],
+                  subCategory: doc['subCategory'],
+                  field: doc['field'],
                 ))
             .toList();
 

@@ -4,51 +4,47 @@ import 'firebase_service.dart';
 
 class DataRepository {
   final FirebaseService _firebaseService = FirebaseService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // ProblemSet 관련 메서드
+  // ProblemSet 받아오기
   Future<List<ProblemSet>> getProblemSets() async {
-    QuerySnapshot snapshot =
-        await _firebaseService.getCollection('problemSets');
-    return snapshot.docs
-        .map((doc) => ProblemSet(
-              id: doc.id,
-              title: doc['title'],
-              description: doc['description'],
-              imageUrl: doc['imageUrl'],
-              tags: List<String>.from(doc['tags']),
-              subjectId: doc['subjectId'],
-              price: doc['price'],
-              totalProblems: doc['totalProblems'],
-            ))
-        .toList();
-  }
+    // isActive가 true인 문서들 가져오기
+    final snapshot = await _firestore
+        .collection('problemSets')
+        .where('isActive', isEqualTo: true)
+        .get();
 
-  Future<void> addProblemSet(ProblemSet problemSet) async {
-    await _firebaseService.addDocument('problemSets', {
-      'title': problemSet.title,
-      'description': problemSet.description,
-      'imageUrl': problemSet.imageUrl,
-      'tags': problemSet.tags,
-      'subjectId': problemSet.subjectId,
-      'price': problemSet.price,
-      'totalProblems': problemSet.totalProblems,
-    });
-  }
+    // isActive가 null인 문서들 가져오기
+    final nullActiveSnapshot = await _firestore
+        .collection('problemSets')
+        .where('isActive', isNull: true)
+        .get();
 
-  Future<void> updateProblemSet(ProblemSet problemSet) async {
-    await _firebaseService.updateDocument('problemSets', problemSet.id, {
-      'title': problemSet.title,
-      'description': problemSet.description,
-      'imageUrl': problemSet.imageUrl,
-      'tags': problemSet.tags,
-      'subjectId': problemSet.subjectId,
-      'price': problemSet.price,
-      'totalProblems': problemSet.totalProblems,
-    });
-  }
+    // null인 문서들의 isActive를 false로 업데이트
+    final batch = _firestore.batch();
+    for (var doc in nullActiveSnapshot.docs) {
+      batch.update(_firestore.collection('problemSets').doc(doc.id), {
+        'isActive': false,
+      });
+    }
+    await batch.commit();
 
-  Future<void> deleteProblemSet(String id) async {
-    await _firebaseService.deleteDocument('problemSets', id);
+    return snapshot.docs.map((doc) {
+      var data = doc.data();
+      return ProblemSet(
+        id: doc.id,
+        title: data['title'] ?? '',
+        description: data['description'] ?? '',
+        imageUrl: data['imageUrl'] ?? '',
+        tags: List<String>.from(data['tags'] ?? []),
+        subjectId: data['subjectId'] ?? '',
+        price: data['price'] ?? 0,
+        totalProblems: data['totalProblems'] ?? 0,
+        category: data['category'] ?? '',
+        subCategory: data['subCategory'] ?? '',
+        field: data['field'] ?? '',
+      );
+    }).toList();
   }
 
   // Problem 관련 메서드

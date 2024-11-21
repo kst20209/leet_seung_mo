@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:leet_seung_mo/widgets/tag_chip.dart';
+import '../widgets/tag_chip.dart';
 import '../widgets/problem_set_item.dart';
 import '../utils/data_manager.dart';
 import '../models/models.dart';
@@ -18,6 +18,19 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
   List<ProblemSet> _problemSets = [];
   final DataManager _dataManager = DataManager();
 
+  // 선택된 필터들을 저장하는 Set
+  final Set<String> _selectedCategories = {};
+  final Set<String> _selectedSubCategories = {};
+  final Set<String> _selectedFields = {};
+
+  // 필터 옵션 정의
+  static const Map<String, List<String>> _categorySubCategories = {
+    '추리': ['지문분석형', '사례분석형', '모형추리형'],
+    '논증': ['논쟁형', '결과평가형', '다이어그램형'],
+  };
+
+  static const List<String> _fields = ['규범', '인문', '사회', '과학'];
+
   @override
   void initState() {
     super.initState();
@@ -26,9 +39,114 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
 
   Future<void> _fetchProblemSets() async {
     final problemSets = await _dataManager.getProblemSets();
-    setState(() {
-      _problemSets = problemSets;
+    final userDataProvider = context.read<UserDataProvider>();
+    final purchasedSets =
+        userDataProvider.userData?['purchasedProblemSets'] as List<dynamic>? ??
+            [];
+
+    // 필터 적용
+    var filteredSets = problemSets.where((set) {
+      bool categoryMatch = _selectedCategories.isEmpty ||
+          _selectedCategories.contains(set.category);
+      bool subCategoryMatch = _selectedSubCategories.isEmpty ||
+          _selectedSubCategories.contains(set.subCategory);
+      bool fieldMatch =
+          _selectedFields.isEmpty || _selectedFields.contains(set.field);
+
+      return categoryMatch && subCategoryMatch && fieldMatch;
+    }).toList();
+
+    // 정렬 로직 적용
+    filteredSets.sort((a, b) {
+      // 구매한 문제꾸러미는 항상 뒤로
+      if (purchasedSets.contains(a.id) && !purchasedSets.contains(b.id))
+        return 1;
+      if (!purchasedSets.contains(a.id) && purchasedSets.contains(b.id))
+        return -1;
+
+      // 카테고리 정렬
+      if (a.category != b.category) {
+        return _getCategoryOrder(a.category)
+            .compareTo(_getCategoryOrder(b.category));
+      }
+
+      // 서브카테고리 정렬
+      if (a.subCategory != b.subCategory) {
+        return _getSubCategoryOrder(a.category, a.subCategory)
+            .compareTo(_getSubCategoryOrder(b.category, b.subCategory));
+      }
+
+      // 분야별 정렬
+      return _getFieldOrder(a.field).compareTo(_getFieldOrder(b.field));
     });
+
+    setState(() {
+      _problemSets = filteredSets;
+    });
+  }
+
+  int _getCategoryOrder(String category) {
+    switch (category) {
+      case '추리':
+        return 0;
+      case '논증':
+        return 1;
+      default:
+        return 99;
+    }
+  }
+
+  int _getSubCategoryOrder(String category, String subCategory) {
+    if (category == '추리') {
+      switch (subCategory) {
+        case '지문분석형':
+          return 0;
+        case '사례분석형':
+          return 1;
+        case '모형추리형':
+          return 2;
+        default:
+          return 99;
+      }
+    } else if (category == '논증') {
+      switch (subCategory) {
+        case '논쟁형':
+          return 0;
+        case '결과평가형':
+          return 1;
+        case '다이어그램형':
+          return 2;
+        default:
+          return 99;
+      }
+    }
+    return 99;
+  }
+
+  int _getFieldOrder(String field) {
+    switch (field) {
+      case '규범':
+        return 0;
+      case '인문':
+        return 1;
+      case '사회':
+        return 2;
+      case '과학':
+        return 3;
+      default:
+        return 99;
+    }
+  }
+
+  void _updateFilter(String value, Set<String> filterSet) {
+    setState(() {
+      if (filterSet.contains(value)) {
+        filterSet.remove(value);
+      } else {
+        filterSet.add(value);
+      }
+    });
+    _fetchProblemSets();
   }
 
   @override
@@ -47,29 +165,45 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
                 _isFilterExpanded = !_isFilterExpanded;
               });
             },
+            selectedCategories: _selectedCategories,
+            selectedSubCategories: _selectedSubCategories,
+            selectedFields: _selectedFields,
+            onFilterUpdate: _updateFilter,
+            categorySubCategories: _categorySubCategories,
+            fields: _fields,
           ),
-          Expanded(
-            child: Consumer<UserDataProvider>(
-              builder: (context, userDataProvider, _) {
-                return ListView.builder(
-                  itemCount: _problemSets.length,
-                  itemBuilder: (context, index) {
-                    final problemSet = _problemSets[index];
-                    final purchasedSets =
-                        userDataProvider.userData?['purchasedProblemSets']
-                                as List<dynamic>? ??
-                            [];
-                    final isPurchased = purchasedSets.contains(problemSet.id);
+          if (_problemSets.isEmpty)
+            Expanded(
+              child: Center(
+                child: Text(
+                  '해당하는 문제꾸러미가 없습니다',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: Consumer<UserDataProvider>(
+                builder: (context, userDataProvider, _) {
+                  return ListView.builder(
+                    itemCount: _problemSets.length,
+                    itemBuilder: (context, index) {
+                      final problemSet = _problemSets[index];
+                      final purchasedSets =
+                          userDataProvider.userData?['purchasedProblemSets']
+                                  as List<dynamic>? ??
+                              [];
+                      final isPurchased = purchasedSets.contains(problemSet.id);
 
-                    return ProblemSetItem(
-                      problemSet: problemSet,
-                      isPurchased: isPurchased,
-                    );
-                  },
-                );
-              },
+                      return ProblemSetItem(
+                        problemSet: problemSet,
+                        isPurchased: isPurchased,
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -79,11 +213,23 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
 class FilterSection extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onExpandToggle;
+  final Set<String> selectedCategories;
+  final Set<String> selectedSubCategories;
+  final Set<String> selectedFields;
+  final Function(String, Set<String>) onFilterUpdate;
+  final Map<String, List<String>> categorySubCategories;
+  final List<String> fields;
 
   const FilterSection({
     Key? key,
     required this.isExpanded,
     required this.onExpandToggle,
+    required this.selectedCategories,
+    required this.selectedSubCategories,
+    required this.selectedFields,
+    required this.onFilterUpdate,
+    required this.categorySubCategories,
+    required this.fields,
   }) : super(key: key);
 
   @override
@@ -120,26 +266,31 @@ class FilterSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FilterGroup(title: '과목', filters: ['추리논증', '언어이해']),
-                  const SizedBox(height: 16),
-                  FilterGroup(
+                  _buildFilterGroup(
+                    context: context,
                     title: '유형',
-                    filters: [
-                      '단순주장형',
-                      '논쟁형',
-                      '결과분석형',
-                      '규정해석형',
-                      '지문분석형',
-                      '사례분석형',
-                      '규정적용형',
-                      '다이어그램형',
-                      '퀴즈형'
-                    ],
+                    filters: categorySubCategories.keys.toList(),
+                    selectedFilters: selectedCategories,
+                    onTap: (value) => onFilterUpdate(value, selectedCategories),
                   ),
                   const SizedBox(height: 16),
-                  FilterGroup(
-                      title: '주제',
-                      filters: ['법학', '순수학문', '사회학문', '자연과학', '기타학문']),
+                  _buildFilterGroup(
+                    context: context,
+                    title: '세부 유형',
+                    filters:
+                        categorySubCategories.values.expand((x) => x).toList(),
+                    selectedFilters: selectedSubCategories,
+                    onTap: (value) =>
+                        onFilterUpdate(value, selectedSubCategories),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildFilterGroup(
+                    context: context,
+                    title: '분야',
+                    filters: fields,
+                    selectedFilters: selectedFields,
+                    onTap: (value) => onFilterUpdate(value, selectedFields),
+                  ),
                 ],
               ),
             ),
@@ -148,17 +299,14 @@ class FilterSection extends StatelessWidget {
       ),
     );
   }
-}
 
-class FilterGroup extends StatelessWidget {
-  final String title;
-  final List<String> filters;
-
-  const FilterGroup({Key? key, required this.title, required this.filters})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildFilterGroup({
+    required BuildContext context,
+    required String title,
+    required List<String> filters,
+    required Set<String> selectedFilters,
+    required Function(String) onTap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,12 +320,15 @@ class FilterGroup extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: filters
-              .map((filter) => TagChip(
-                    label: filter,
-                    onTap: () {},
-                  ))
-              .toList(),
+          children: filters.map((filter) {
+            final isSelected = selectedFilters.contains(filter);
+            return TagChip(
+              label: filter,
+              onTap: () => onTap(filter),
+              isSelected: isSelected,
+              // backgroundColor: Theme.of(context).colorScheme.primary,
+            );
+          }).toList(),
         ),
       ],
     );

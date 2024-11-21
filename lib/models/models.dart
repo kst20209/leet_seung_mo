@@ -7,6 +7,9 @@ class ProblemSet {
   final String subjectId;
   final int price;
   final int totalProblems;
+  final String category; // 추리, 논증
+  final String subCategory; // 지문분석형, 논쟁형 등
+  final String field; // 규범, 인문, 사회, 과학
 
   ProblemSet({
     required this.id,
@@ -17,6 +20,9 @@ class ProblemSet {
     required this.subjectId,
     required this.price,
     required this.totalProblems,
+    required this.category,
+    required this.subCategory,
+    required this.field,
   });
 }
 
