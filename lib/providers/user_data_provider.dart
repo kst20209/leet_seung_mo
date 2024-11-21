@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:leet_seung_mo/utils/sort_service.dart';
 import '../utils/firebase_service.dart';
 import '../models/models.dart';
 import 'problem_user_data_service.dart';
@@ -303,7 +304,7 @@ class UserDataProvider with ChangeNotifier {
         allProblemSets.addAll(problemSets);
       }
 
-      return allProblemSets;
+      return SortService().sortProblemSets(allProblemSets);
     } catch (e) {
       _setError('Failed to load purchased problem sets: $e');
       return [];
