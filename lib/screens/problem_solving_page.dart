@@ -475,7 +475,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   spreadRadius: 1,
                   blurRadius: 10,
                   offset: Offset(0, 3),
@@ -489,7 +489,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -527,7 +527,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   spreadRadius: 1,
                   blurRadius: 10,
                   offset: Offset(0, 3),
@@ -541,7 +541,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -722,7 +722,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor:
-                        Theme.of(context).primaryColor.withOpacity(0.1),
+                        Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     child: Text(
                       answer,
                       style: TextStyle(

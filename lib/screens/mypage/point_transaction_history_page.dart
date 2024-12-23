@@ -272,8 +272,8 @@ class TransactionCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isCredit
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.red.withValues(alpha: 0.1),
               ),
               child: Icon(
                 isCredit ? Icons.arrow_forward : Icons.arrow_back,
