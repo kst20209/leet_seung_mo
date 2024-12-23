@@ -14,12 +14,6 @@ class MyProblemPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('나의 문제'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Consumer<UserDataProvider>(
         builder: (context, userDataProvider, _) {

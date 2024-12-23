@@ -76,8 +76,15 @@ class MyApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFFF8F4E1),
           foregroundColor: Color(0xFF543310),
-          elevation: 0,
+          elevation: 0.1,
+          shadowColor: Color.fromARGB(255, 20, 11, 0),
           toolbarHeight: 50,
+          shape: Border(
+            bottom: BorderSide(
+              color: Colors.black12,
+              width: 0.5,
+            ),
+          ),
         ),
         textTheme: const TextTheme(
           displayLarge: TextStyle(
@@ -269,30 +276,35 @@ class _MainScreenState extends State<MainScreen> {
         index: _selectedIndex,
         children: _widgetOptions,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '홈',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: '상점',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: '문제',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: '마이',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).colorScheme.secondary,
-        onTap: _onItemTapped,
+      bottomNavigationBar: Container(
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          elevation: 0.1,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home, size: 28),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.book),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: '',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Theme.of(context).colorScheme.secondary,
+          unselectedItemColor: Theme.of(context).colorScheme.primary,
+          onTap: _onItemTapped,
+        ),
       ),
     );
   }
