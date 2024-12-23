@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../widgets/tag_chip.dart';
 import './problem_list_page.dart';
 import '../utils/custom_network_image.dart';
 import '../models/models.dart';
@@ -105,39 +106,105 @@ class _ProblemSetListPageState extends State<ProblemSetListPage> {
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _problemSets!.length,
       itemBuilder: (context, index) {
         final problemSet = _problemSets![index];
-        return Card(
-          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CustomNetworkImage(
-                imageUrl: problemSet.imageUrl,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-              ),
-            ),
-            title: Text(problemSet.title),
-            subtitle: Text(problemSet.description),
-            trailing: Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProblemListPage(
-                    title: problemSet.title,
-                    type: ProblemListType.problemSet,
-                    problemSetId: problemSet.id,
-                  ),
-                ),
-              );
-            },
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 1),
+          child: PurchasedProblemSetItem(
+            problemSet: problemSet,
+            // totalSolvedProblems: problemSet.solvedProblems, // 데이터가 있다면 추가
           ),
         );
       },
+    );
+  }
+}
+
+class PurchasedProblemSetItem extends StatelessWidget {
+  final ProblemSet problemSet;
+  final int? totalSolvedProblems; // 선택적으로 추가할 수 있는 정보
+
+  const PurchasedProblemSetItem({
+    Key? key,
+    required this.problemSet,
+    this.totalSolvedProblems,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+      color: Colors.white,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProblemListPage(
+                title: problemSet.title,
+                type: ProblemListType.problemSet,
+                problemSetId: problemSet.id,
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 90,
+                height: 90,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CustomNetworkImage(
+                    imageUrl: problemSet.imageUrl,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      problemSet.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: problemSet.tags
+                          .map((tag) => TagChip(label: tag))
+                          .toList(),
+                    ),
+                    SizedBox(height: 4),
+                    if (totalSolvedProblems != null)
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Text(
+                          '${totalSolvedProblems}/${problemSet.totalProblems} 문제 해결',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
