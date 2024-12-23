@@ -30,8 +30,11 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: SectionTitle(title),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+          child: SectionTitle(
+            title,
+            padding: EdgeInsets.fromLTRB(20, 32, 0, 8),
+          ),
         ),
         FutureBuilder<List<T>>(
           future: future,

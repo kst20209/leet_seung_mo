@@ -80,18 +80,10 @@ class MyProblemPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SectionTitle(title),
-              TextButton(
-                onPressed: onMorePressed,
-                child: const Text('더보기'),
-              ),
-            ],
-          ),
+        SectionTitle(
+          title,
+          onMorePressed: onMorePressed,
+          padding: EdgeInsets.fromLTRB(20, 24, 4, 0),
         ),
         FutureBuilder<List<T>>(
           future: future,
@@ -113,7 +105,6 @@ class MyProblemPage extends StatelessWidget {
                 ),
               );
             }
-
             return HorizontalItemList(
               items: items.map((item) => convertToGenericItem(item)).toList(),
               onItemTap: (item) => onItemTap(item, items),

@@ -55,7 +55,7 @@ class HorizontalItemList extends StatelessWidget {
                 return Padding(
                   padding: EdgeInsets.only(
                     left: index == 0 ? 12 : 0,
-                    right: 12,
+                    right: 6,
                   ),
                   child: SizedBox(
                     width: 160,
