@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:leet_seung_mo/main.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import 'signup/signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -78,7 +78,12 @@ class _LoginScreenState extends State<LoginScreen> {
       _codeController.text,
     );
 
-    if (!success && mounted) {
+    if (success && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+        (Route<dynamic> route) => false, // 모든 이전 라우트 제거
+      );
+    } else if (!success && mounted) {
       setState(() {
         _error = authProvider.error;
       });
@@ -104,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  '리승모',
+                  '로그인',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).primaryColor,
@@ -145,16 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16),
                   ),
-                ),
-                SizedBox(height: 24),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SignUpScreen()),
-                    );
-                  },
-                  child: Text('회원가입'),
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/main.dart';
 import 'build_terms_page.dart';
 import 'email_password_screen.dart';
 import 'phone_verification_screen.dart';
@@ -58,7 +59,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           BuildThankYouPage(
             onStartPressed: () {
-              print('Navigate to main screen');
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => MainScreen()),
+                (route) => false,
+              );
             },
           ),
         ],
@@ -67,7 +72,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _goToNextPage() async {
-    if (_currentPage < 4) {
+    if (_currentPage < 3) {
       await _pageController.nextPage(
         duration: Duration(milliseconds: 300),
         curve: Curves.easeInOut,
