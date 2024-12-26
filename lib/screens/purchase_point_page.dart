@@ -206,12 +206,12 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
               if (_isProcessing) const LinearProgressIndicator(),
               Expanded(
                 child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 1.3,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
                   itemCount: pointProducts.length,
                   itemBuilder: (context, index) {
