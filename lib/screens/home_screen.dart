@@ -8,6 +8,7 @@ import '../screens/problem_solving_page.dart';
 import '../screens/problem_list_page.dart';
 import '../models/models.dart';
 import '../utils/home_data_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -86,7 +87,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('리승모'),
+        title: Row(
+          children: [
+            SvgPicture.asset(
+              'assets/logo.svg',
+              colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onSurface, BlendMode.srcIn),
+              height: AppBar.preferredHeightFor(
+                      context, Size.fromHeight(kToolbarHeight)) *
+                  0.35,
+              fit: BoxFit.contain,
+            ),
+            // SizedBox(width: 6),
+            // const Text('리승모'),
+          ],
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
