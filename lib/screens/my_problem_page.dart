@@ -22,6 +22,7 @@ class MyProblemPage extends StatelessWidget {
               _buildDataSection(
                 context: context,
                 title: '나의 문제꾸러미',
+                icon: Icons.collections_bookmark,
                 emptyMessage: '구매한 문제꾸러미가 없습니다',
                 future: userDataProvider.getPurchasedProblemSets(),
                 isSubject: true,
@@ -32,6 +33,7 @@ class MyProblemPage extends StatelessWidget {
               _buildDataSection(
                 context: context,
                 title: '즐겨찾기한 문제',
+                icon: Icons.star_rounded,
                 emptyMessage: '즐겨찾기한 문제가 없습니다',
                 future: userDataProvider.getFavoriteProblems(),
                 onMorePressed: () => _navigateToProblemList(
@@ -45,6 +47,7 @@ class MyProblemPage extends StatelessWidget {
               _buildDataSection(
                 context: context,
                 title: '오답노트',
+                icon: Icons.rate_review,
                 emptyMessage: '틀린 문제가 없습니다',
                 future: userDataProvider.getIncorrectProblems(),
                 onMorePressed: () => _navigateToProblemList(
@@ -55,6 +58,7 @@ class MyProblemPage extends StatelessWidget {
                 onItemTap: (item, items) =>
                     _navigateToProblemSolving(context, item, items),
               ),
+              SizedBox(height: 32),
             ],
           );
         },
@@ -65,6 +69,7 @@ class MyProblemPage extends StatelessWidget {
   Widget _buildDataSection<T>({
     required BuildContext context,
     required String title,
+    required IconData icon,
     required String emptyMessage,
     required Future<List<T>> future,
     required VoidCallback onMorePressed,
@@ -76,6 +81,7 @@ class MyProblemPage extends StatelessWidget {
       children: [
         SectionTitle(
           title,
+          icon: icon,
           onMorePressed: onMorePressed,
           padding: EdgeInsets.fromLTRB(20, 24, 4, 0),
         ),

@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDataSection<T>({
     required String title,
+    required IconData icon,
     required Future<List<T>> future,
     required Function(GenericItem, List<T>) onItemTap,
   }) {
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
           child: SectionTitle(
             title,
+            icon: icon,
             padding: EdgeInsets.fromLTRB(20, 32, 0, 8),
           ),
         ),
@@ -64,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, userDataProvider, _) {
         return _buildDataSection<ProblemSet>(
           title: '나의 문제꾸러미',
+          icon: Icons.collections_bookmark,
           future: userDataProvider
               .getPurchasedProblemSets(), // watch를 통한 Provider 사용
           onItemTap: (item, items) {
@@ -130,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               _buildDataSection<Problem>(
                 title: '오늘의 무료 문제',
+                icon: Icons.local_offer,
                 future: _homeDataService.getTodayFreeProblems(),
                 onItemTap: (item, items) {
                   Navigator.push(

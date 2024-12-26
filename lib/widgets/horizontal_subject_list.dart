@@ -102,7 +102,7 @@ class ItemCard extends StatelessWidget {
                 children: [
                   Text(
                     item.title,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleLarge,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
