@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'mypage/inquiry_page.dart';
 import 'mypage/point_transaction_history_page.dart';
-import 'dart:convert';
 
 import '../providers/user_data_provider.dart';
 import 'purchase_point_page.dart';
@@ -19,23 +18,6 @@ class _MyPageState extends State<MyPage> {
   @override
   void initState() {
     super.initState();
-    userData = _loadMockData();
-  }
-
-  Map<String, dynamic> _loadMockData() {
-    // 가상의 사용자 데이터
-    String jsonString = '''
-    {
-      "nickname": "테스트 사용자",
-      "uid": "user123",
-      "points": 1000,
-      "totalSolvedProblems": 150,
-      "weeklyStudyTime": 10,
-      "monthlyStudyTime": 40,
-      "studyDays": [1, 3, 5, 7, 10, 12, 15]
-    }
-    ''';
-    return json.decode(jsonString);
   }
 
   Future<void> _handleLogout(BuildContext context) async {
@@ -66,10 +48,11 @@ class _MyPageState extends State<MyPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildUserInfo(),
+              _buildProfileSection(context),
+              SizedBox(height: 16),
+              _buildPointCard(context),
               Divider(height: 32),
-              _buildLearningStats(),
-              _buildLearningCalendar(),
+              _buildStatisticsPreview(context),
               Divider(height: 32),
               _buildSettingsList(context),
             ],
@@ -79,99 +62,148 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
-  Widget _buildUserInfo() {
-    return Consumer2<AppAuthProvider, UserDataProvider>(
-      builder: (context, authProvider, userDataProvider, _) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${userDataProvider.nickname ?? 'Guest'}',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () => _handleLogout(context),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
+  Widget _buildProfileSection(BuildContext context) {
+    return Consumer<UserDataProvider>(
+      builder: (context, userDataProvider, _) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          ),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Text(
+                  (userDataProvider.nickname ?? 'G')[0].toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  child: const Text('로그아웃'),
                 ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${userDataProvider.points} P',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PurchasePointPage(),
-                      ),
-                    );
-                  },
-                  child: Text('충전하기'),
-                ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                userDataProvider.nickname ?? 'Guest',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _buildLearningStats() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('학습 통계',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        SizedBox(height: 8),
-        Text('총 해결한 문제: ${userData['totalSolvedProblems']}'),
-        Text('이번 주 학습 시간: ${userData['weeklyStudyTime']} 시간'),
-        Text('이번 달 학습 시간: ${userData['monthlyStudyTime']} 시간'),
-      ],
+  Widget _buildPointCard(BuildContext context) {
+    return Consumer<UserDataProvider>(
+      builder: (context, userDataProvider, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Card(
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PurchasePointPage(),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '보유 포인트',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${userDataProvider.points} P',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PurchasePointPage(),
+                          ),
+                        );
+                      },
+                      child: const Text('충전하기'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildLearningCalendar() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('학습 캘린더',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        SizedBox(height: 8),
-        Container(
-          height: 200,
-          child: GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              childAspectRatio: 1,
-            ),
-            itemCount: 30, // Simplified to show 30 days
-            itemBuilder: (context, index) {
-              bool hasStudied =
-                  userData['studyDays']?.contains(index + 1) ?? false;
-              return Container(
-                margin: EdgeInsets.all(2),
-                color: hasStudied ? Colors.blue : Colors.grey[300],
-                child: Center(child: Text('${index + 1}')),
-              );
-            },
+  Widget _buildStatisticsPreview(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '학습 통계',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(
+                    '',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    Icon(
+                      Icons.analytics_outlined,
+                      size: 48,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '곧 새로운 통계 기능이 제공됩니다',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -206,6 +238,11 @@ class _MyPageState extends State<MyPage> {
       {'title': '개인정보처리방침', 'icon': Icons.security},
       {'title': '이용약관', 'icon': Icons.description},
       {'title': '버전 정보', 'icon': Icons.new_releases},
+      {
+        'title': '로그아웃',
+        'icon': Icons.logout,
+        'onTap': () => _handleLogout(context),
+      },
     ];
 
     return Column(
