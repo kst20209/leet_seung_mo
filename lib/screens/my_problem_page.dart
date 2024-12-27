@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/sort_service.dart';
 import 'package:provider/provider.dart';
 import '../widgets/section_title.dart';
 import '../widgets/horizontal_subject_list.dart';
@@ -43,7 +44,8 @@ class _MyProblemPageState extends State<MyProblemPage> {
                   title: '나의 문제꾸러미',
                   icon: Icons.collections_bookmark,
                   emptyMessage: '구매한 문제꾸러미가 없습니다',
-                  items: provider.purchasedProblemSets,
+                  items: SortService()
+                      .sortProblemSets(provider.purchasedProblemSets),
                   isSubject: true,
                   onMorePressed: () => _navigateToProblemSetList(context),
                   onItemTap: (item, _) =>
@@ -54,7 +56,7 @@ class _MyProblemPageState extends State<MyProblemPage> {
                   title: '즐겨찾기한 문제',
                   icon: Icons.star_rounded,
                   emptyMessage: '즐겨찾기한 문제가 없습니다',
-                  items: provider.favoriteProblems,
+                  items: SortService().sortProblems(provider.favoriteProblems),
                   onMorePressed: () => _navigateToProblemList(
                     context,
                     '즐겨찾기한 문제',
@@ -68,7 +70,7 @@ class _MyProblemPageState extends State<MyProblemPage> {
                   title: '오답노트',
                   icon: Icons.rate_review,
                   emptyMessage: '틀린 문제가 없습니다',
-                  items: provider.incorrectProblems,
+                  items: SortService().sortProblems(provider.incorrectProblems),
                   onMorePressed: () => _navigateToProblemList(
                     context,
                     '오답노트',

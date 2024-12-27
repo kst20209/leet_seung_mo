@@ -86,4 +86,51 @@ class SortService {
         return _getFieldOrder(a.field).compareTo(_getFieldOrder(b.field));
       });
   }
+
+  List<Problem> sortProblems(List<Problem> problems) {
+    // 먼저 문제꾸러미 ID를 기반으로 ProblemSet 정보를 찾기 위한 Map을 만듭니다
+    Map<String, ProblemSet> problemSetMap = {};
+
+    // ProblemSet 정보를 가져와 맵에 저장하는 작업이 필요할 수 있습니다
+    // 이는 Firestore에서 한 번에 가져오는 것이 좋습니다
+
+    return List<Problem>.from(problems)
+      ..sort((a, b) {
+        // 같은 problem set에 속한 문제들끼리 먼저 그룹화
+        if (a.problemSetId != b.problemSetId) {
+          final problemSetA = problemSetMap[a.problemSetId];
+          final problemSetB = problemSetMap[b.problemSetId];
+
+          if (problemSetA != null && problemSetB != null) {
+            // 카테고리 정렬
+            if (problemSetA.category != problemSetB.category) {
+              return _getCategoryOrder(problemSetA.category)
+                  .compareTo(_getCategoryOrder(problemSetB.category));
+            }
+
+            // 서브카테고리 정렬
+            if (problemSetA.subCategory != problemSetB.subCategory) {
+              return _getSubCategoryOrder(
+                      problemSetA.category, problemSetA.subCategory)
+                  .compareTo(_getSubCategoryOrder(
+                      problemSetB.category, problemSetB.subCategory));
+            }
+
+            // 분야별 정렬
+            final fieldCompare = _getFieldOrder(problemSetA.field)
+                .compareTo(_getFieldOrder(problemSetB.field));
+            if (fieldCompare != 0) return fieldCompare;
+          }
+        }
+
+        // 같은 카테고리/서브카테고리/분야 내에서는 번호순 정렬
+        final aNum =
+            int.tryParse(RegExp(r'\d+').firstMatch(a.title)?.group(0) ?? '0') ??
+                0;
+        final bNum =
+            int.tryParse(RegExp(r'\d+').firstMatch(b.title)?.group(0) ?? '0') ??
+                0;
+        return aNum.compareTo(bNum);
+      });
+  }
 }

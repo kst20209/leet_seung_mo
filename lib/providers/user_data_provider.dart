@@ -368,7 +368,6 @@ class UserDataProvider with ChangeNotifier {
 
         allProblemSets.addAll(problemSets);
       }
-
       _cachedProblemSets = allProblemSets;
       _lastProblemSetsFetchTime = DateTime.now();
 

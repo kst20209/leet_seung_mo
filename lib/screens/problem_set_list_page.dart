@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/sort_service.dart';
 import 'package:provider/provider.dart';
 import '../widgets/tag_chip.dart';
 import './problem_list_page.dart';
@@ -36,7 +37,7 @@ class _ProblemSetListPageState extends State<ProblemSetListPage> {
 
       if (mounted) {
         setState(() {
-          _problemSets = problemSets;
+          _problemSets = SortService().sortProblemSets(problemSets);
           _isLoading = false;
         });
       }
