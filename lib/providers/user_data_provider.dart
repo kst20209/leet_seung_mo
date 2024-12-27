@@ -24,6 +24,8 @@ class UserDataProvider with ChangeNotifier {
 
   // 캐시를 위한 맵
   final Map<String, Map<String, dynamic>> _problemDataCache = {};
+  List<ProblemSet>? _cachedProblemSets;
+  DateTime? _lastProblemSetsFetchTime;
 
   UserDataProvider(this._firebaseService);
 
@@ -192,12 +194,17 @@ class UserDataProvider with ChangeNotifier {
 
       final favoriteIds =
           await _problemUserDataService.getFavoriteProblemIds(userId);
+      print(
+          "⭐️ getFavoriteProblems - favoriteIds: $favoriteIds"); // favoriteIds 확인
       if (favoriteIds.isEmpty) return [];
 
       final QuerySnapshot problemsSnapshot = await _firestore
           .collection('problems')
           .where(FieldPath.documentId, whereIn: favoriteIds)
           .get();
+
+      print(
+          "⭐️ getFavoriteProblems - found problems: ${problemsSnapshot.docs.length}");
 
       return problemsSnapshot.docs
           .map((doc) => Problem(
@@ -213,6 +220,8 @@ class UserDataProvider with ChangeNotifier {
               ))
           .toList();
     } catch (e) {
+      print("❌ getFavoriteProblems error: $e"); // 에러 확인
+      print("❌ Error stack trace: ${StackTrace.current}"); // 스택 트레이스 확인
       _setError('Failed to load favorite problems: $e');
       return [];
     }
@@ -266,9 +275,22 @@ class UserDataProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // 캐시 무효화 메서드 추가
+  void invalidateProblemSetsCache() {
+    _cachedProblemSets = null;
+    _lastProblemSetsFetchTime = null;
+  }
+
   // Get purchased problem sets
   Future<List<ProblemSet>> getPurchasedProblemSets() async {
     try {
+      if (_cachedProblemSets != null &&
+          _lastProblemSetsFetchTime != null &&
+          DateTime.now().difference(_lastProblemSetsFetchTime!) <
+              Duration(minutes: 15)) {
+        return _cachedProblemSets!;
+      }
+
       if (_userData == null) return [];
 
       final purchasedIds =
@@ -304,9 +326,12 @@ class UserDataProvider with ChangeNotifier {
         allProblemSets.addAll(problemSets);
       }
 
+      _cachedProblemSets = allProblemSets;
+      _lastProblemSetsFetchTime = DateTime.now();
+
       return SortService().sortProblemSets(allProblemSets);
     } catch (e) {
-      _setError('Failed to load purchased problem sets: $e');
+      _setError('구입 문제꾸러미를 불러오는데 실패했습니다: $e');
       return [];
     }
   }
