@@ -22,11 +22,6 @@ class UserDataProvider with ChangeNotifier {
   UserDataStatus _status = UserDataStatus.initial;
   String? _error;
 
-  // 캐시를 위한 맵
-  final Map<String, Map<String, dynamic>> _problemDataCache = {};
-  List<ProblemSet>? _cachedProblemSets;
-  DateTime? _lastProblemSetsFetchTime;
-
   UserDataProvider(this._firebaseService);
 
   // 기존 getters
@@ -35,6 +30,37 @@ class UserDataProvider with ChangeNotifier {
   String? get error => _error;
   String? get nickname => _userData?['nickname'] as String?;
   int get points => _userData?['currentPoints'] ?? 0;
+
+  //문제 관련
+  List<ProblemSet>? _purchasedProblemSets;
+  List<Problem>? _favoriteProblems;
+  List<Problem>? _incorrectProblems;
+  bool _isLoadingProblems = false;
+
+  List<ProblemSet> get purchasedProblemSets => _purchasedProblemSets ?? [];
+  List<Problem> get favoriteProblems => _favoriteProblems ?? [];
+  List<Problem> get incorrectProblems => _incorrectProblems ?? [];
+  bool get isLoadingProblems => _isLoadingProblems;
+
+  // 캐시를 위한 맵
+  final Map<String, Map<String, dynamic>> _problemDataCache = {};
+  List<ProblemSet>? _cachedProblemSets;
+  DateTime? _lastProblemSetsFetchTime;
+
+  Future<void> loadAllProblemData() async {
+    if (_isLoadingProblems) return;
+    _isLoadingProblems = true;
+    notifyListeners();
+
+    try {
+      _purchasedProblemSets = await getPurchasedProblemSets();
+      _favoriteProblems = await getFavoriteProblems();
+      _incorrectProblems = await getIncorrectProblems();
+    } finally {
+      _isLoadingProblems = false;
+      notifyListeners();
+    }
+  }
 
   void _setError(String error) {
     _error = error;
@@ -72,6 +98,7 @@ class UserDataProvider with ChangeNotifier {
     try {
       DocumentSnapshot doc = await _firebaseService.getDocument('users', uid);
       _userData = doc.data() as Map<String, dynamic>?;
+      _purchasedProblemSets = await getPurchasedProblemSets();
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
@@ -95,6 +122,10 @@ class UserDataProvider with ChangeNotifier {
     if (_problemDataCache.containsKey(problemId)) {
       _problemDataCache[problemId]?['isSolved'] = true;
       _problemDataCache[problemId]?['lastAttemptId'] = attemptId;
+    }
+
+    if (isCorrect != true) {
+      _incorrectProblems = await getIncorrectProblems();
     }
 
     notifyListeners();
@@ -177,7 +208,7 @@ class UserDataProvider with ChangeNotifier {
       if (_problemDataCache.containsKey(problemId)) {
         _problemDataCache[problemId]?['isFavorite'] = newState;
       }
-
+      _favoriteProblems = await getFavoriteProblems();
       notifyListeners();
       return newState;
     } catch (e) {
@@ -283,12 +314,24 @@ class UserDataProvider with ChangeNotifier {
 
   // Get purchased problem sets
   Future<List<ProblemSet>> getPurchasedProblemSets() async {
+    final timeout = DateTime.now().add(Duration(seconds: 10));
+
     try {
       if (_cachedProblemSets != null &&
           _lastProblemSetsFetchTime != null &&
           DateTime.now().difference(_lastProblemSetsFetchTime!) <
               Duration(minutes: 15)) {
         return _cachedProblemSets!;
+      }
+
+      while (_userData == null) {
+        if (DateTime.now().isAfter(timeout)) {
+          throw Exception('Timeout waiting for user data');
+        }
+        if (_status == UserDataStatus.error) {
+          throw Exception('Failed to load user data');
+        }
+        await Future.delayed(Duration(milliseconds: 100));
       }
 
       if (_userData == null) return [];
