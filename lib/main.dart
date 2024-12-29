@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/purchase_point_page.dart';
 import 'utils/firebase_service.dart';
+import 'package:http/http.dart' as http;
 
 // providers
 import 'package:provider/provider.dart';
@@ -22,8 +23,31 @@ import 'screens/landing_screen.dart';
 // models
 import 'models/models.dart';
 
+Future<bool> checkInternetConnection() async {
+  try {
+    // Google의 DNS 서버로 실제 연결 테스트
+    final response = await http
+        .get(
+          Uri.parse('https://8.8.8.8'),
+        )
+        .timeout(const Duration(seconds: 5));
+
+    return response.statusCode == 200;
+  } catch (e) {
+    return false;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 실제 인터넷 연결 확인
+  bool hasInternet = await checkInternetConnection();
+  if (!hasInternet) {
+    runApp(NoInternetApp());
+    return;
+  }
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -50,6 +74,64 @@ void main() async {
       child: const MyApp(),
     ),
   );
+}
+
+// 인터넷 연결이 없을 때 표시할 화면
+class NoInternetApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(
+        primarySwatch: const MaterialColor(0xFFAF8F6F, {
+          50: Color(0xFFF8F4E1),
+          100: Color(0xFFF1E9C3),
+          200: Color(0xFFE9DDA5),
+          300: Color(0xFFE1D187),
+          400: Color(0xFFD9C569),
+          500: Color(0xFFAF8F6F),
+          600: Color(0xFF9A7B5B),
+          700: Color(0xFF856747),
+          800: Color(0xFF705333),
+          900: Color(0xFF543310),
+        }),
+        scaffoldBackgroundColor: const Color(0xFFF8F4E1),
+      ),
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.wifi_off,
+                size: 64,
+                color: Color(0xFFAF8F6F),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '인터넷 연결 없음',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF543310),
+                ),
+              ),
+              SizedBox(height: 8),
+              Container(
+                width: 300,
+                alignment: Alignment.center,
+                child: Text(
+                  '앱 사용을 위해서는 인터넷 연결이 필요합니다.',
+                  style: TextStyle(
+                    color: Color(0xFF74512D),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
