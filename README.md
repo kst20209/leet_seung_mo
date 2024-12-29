@@ -8,6 +8,7 @@ Android
 - build.gradle & app/build.gradle 수정 필요
   
 MainActivity.kt
+```kotlin
 package com.example.leet_seung_mo
 
 import io.flutter.embedding.android.FlutterActivity
