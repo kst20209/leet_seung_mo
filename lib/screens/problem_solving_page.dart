@@ -10,6 +10,8 @@ import '../widgets/timer_widget.dart';
 import '../utils/custom_network_image.dart';
 import '../providers/user_data_provider.dart';
 import 'dart:math';
+import 'dart:io';
+import 'package:flutter/services.dart';
 
 class ProblemSolvingPage extends StatefulWidget {
   final Problem problem;
@@ -74,6 +76,16 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
         });
       }
     });
+
+    // 스크린샷 방지 설정 추가
+    if (Platform.isAndroid) {
+      const platform = MethodChannel('flutter_secure_screen');
+      try {
+        platform.invokeMethod('preventScreenshot');
+      } catch (e) {
+        print('Error setting secure screen: $e');
+      }
+    }
   }
 
   Future<void> _checkProblemState() async {
@@ -126,6 +138,15 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
   @override
   void dispose() {
+    if (Platform.isAndroid) {
+      const platform = MethodChannel('flutter_secure_screen');
+      try {
+        platform.invokeMethod('allowScreenshot');
+      } catch (e) {
+        print('Error removing secure screen: $e');
+      }
+    }
+
     _pageController.removeListener(_onPageChanged);
     _pageController.dispose();
     super.dispose();

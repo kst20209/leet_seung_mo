@@ -48,6 +48,12 @@ android/
 *.aab
 *.keystore
 *.jks
+!android/app/src/main/kotlin/
+!android/app/src/main/kotlin/**
+!android/app/src/main/kotlin/com/
+!android/app/src/main/kotlin/com/your/
+!android/app/src/main/kotlin/com/your/package/
+!android/app/src/main/kotlin/com/your/package/MainActivity.kt
 # Java related
 *.jar
 *.war
