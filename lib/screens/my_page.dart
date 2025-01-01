@@ -23,6 +23,9 @@ class _MyPageState extends State<MyPage> {
   Future<void> _handleLogout(BuildContext context) async {
     try {
       await context.read<AppAuthProvider>().signOut();
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
