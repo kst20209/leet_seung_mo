@@ -20,8 +20,25 @@ class _MyProblemPageState extends State<MyProblemPage> {
     super.initState();
     // 컴포넌트가 마운트될 때 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<UserDataProvider>().loadAllProblemData();
+      final provider = context.read<UserDataProvider>();
+      provider.addListener(() {
+        if (provider.error != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.error!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      });
+      provider.loadAllProblemData();
     });
+  }
+
+  @override
+  void dispose() {
+    context.read<UserDataProvider>().removeListener(() {});
+    super.dispose();
   }
 
   @override

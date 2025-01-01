@@ -72,7 +72,6 @@ class UserDataProvider with ChangeNotifier {
   void _setError(String error) {
     _error = error;
     _status = UserDataStatus.error;
-    notifyListeners();
   }
 
   // 초기 데이터 로드
