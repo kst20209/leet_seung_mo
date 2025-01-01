@@ -251,14 +251,7 @@ class UserDataProvider with ChangeNotifier {
         problemId: problemId,
       );
 
-      // 개별 문제 캐시 업데이트
-      final cacheKey = 'problems:$problemId';
-      final problemData = _cache.get<Map<String, dynamic>>(cacheKey);
-      if (problemData != null) {
-        final updatedData = Map<String, dynamic>.from(problemData);
-        updatedData['isFavorite'] = newState;
-        _cache.set(cacheKey, updatedData);
-      }
+      _cache.remove('problems:favorites');
 
       _favoriteProblems = await getFavoriteProblems();
       notifyListeners();
@@ -276,7 +269,7 @@ class UserDataProvider with ChangeNotifier {
       if (userId == null) return [];
 
       // 캐시 확인
-      final cacheKey = 'favorites:$userId';
+      final cacheKey = 'problems:favorites';
       final cachedData = _cache.get<List<Problem>>(cacheKey);
       if (cachedData != null) {
         return cachedData;
