@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:leet_seung_mo/providers/memory_data_cache.dart';
 import 'package:leet_seung_mo/utils/sort_service.dart';
 import '../utils/firebase_service.dart';
 import '../models/models.dart';
@@ -20,6 +21,8 @@ class UserDataProvider with ChangeNotifier {
 
   final ValueNotifier<UserDataStatus> statusNotifier =
       ValueNotifier(UserDataStatus.initial);
+
+  final _cache = MemoryDataCache();
 
   Map<String, dynamic>? _userData;
   UserDataStatus _status = UserDataStatus.initial;
@@ -45,14 +48,18 @@ class UserDataProvider with ChangeNotifier {
   List<Problem> get incorrectProblems => _incorrectProblems ?? [];
   bool get isLoadingProblems => _isLoadingProblems;
 
-  // 캐시를 위한 맵
-  final Map<String, Map<String, dynamic>> _problemDataCache = {};
-  List<ProblemSet>? _cachedProblemSets;
-  DateTime? _lastProblemSetsFetchTime;
-
   final ValueNotifier<bool> loadingProblemSets = ValueNotifier(false);
   final ValueNotifier<bool> loadingFavorites = ValueNotifier(false);
   final ValueNotifier<bool> loadingIncorrect = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    loadingProblemSets.dispose();
+    loadingFavorites.dispose();
+    loadingIncorrect.dispose();
+    statusNotifier.dispose();
+    super.dispose();
+  }
 
   Future<void> loadAllProblemData() async {
     if (_isLoadingProblems) return;
@@ -109,8 +116,24 @@ class UserDataProvider with ChangeNotifier {
       _purchasedProblemSets = await getPurchasedProblemSets();
       notifyListeners();
     } catch (e) {
-      _setError(e.toString());
+      _setError("오류가 발생했습니다: ${e.toString()}");
     }
+  }
+
+  // 캐시 무효화 메서드
+  void invalidateCache(String type) {
+    switch (type) {
+      case 'all':
+        _cache.clear();
+        break;
+      case 'problemSets':
+        _cache.remove('problemSets:purchased');
+        break;
+      case 'favorites':
+        _cache.remove('problems:favorites');
+        break;
+    }
+    notifyListeners();
   }
 
   /// 문제를 해결 완료 상태로 표시합니다.
@@ -127,10 +150,17 @@ class UserDataProvider with ChangeNotifier {
     );
 
     // 캐시 업데이트
-    if (_problemDataCache.containsKey(problemId)) {
-      _problemDataCache[problemId]?['isSolved'] = true;
-      _problemDataCache[problemId]?['lastAttemptId'] = attemptId;
+    final cacheKey = 'problems:$problemId';
+    final problemData = _cache.get<Map<String, dynamic>>(cacheKey);
+    if (problemData != null) {
+      final updatedData = Map<String, dynamic>.from(problemData);
+      updatedData['isSolved'] = true;
+      updatedData['lastAttemptId'] = attemptId;
+      _cache.set(cacheKey, updatedData);
     }
+
+    // 틀린 문제 목록 캐시 무효화
+    _cache.remove('problems:incorrect');
 
     if (isCorrect != true) {
       _incorrectProblems = await getIncorrectProblems();
@@ -149,8 +179,12 @@ class UserDataProvider with ChangeNotifier {
     );
 
     // 캐시 업데이트
-    if (_problemDataCache.containsKey(problemId)) {
-      _problemDataCache[problemId]?['isSolved'] = false;
+    final cacheKey = 'problems:$problemId';
+    final problemData = _cache.get<Map<String, dynamic>>(cacheKey);
+    if (problemData != null) {
+      final updatedData = Map<String, dynamic>.from(problemData);
+      updatedData['isSolved'] = false;
+      _cache.set(cacheKey, updatedData);
     }
 
     notifyListeners();
@@ -169,8 +203,12 @@ class UserDataProvider with ChangeNotifier {
     );
 
     // 캐시 업데이트
-    if (_problemDataCache.containsKey(problemId)) {
-      _problemDataCache[problemId]?['lastAttemptId'] = attemptId;
+    final cacheKey = 'problems:$problemId';
+    final problemData = _cache.get<Map<String, dynamic>>(cacheKey);
+    if (problemData != null) {
+      final updatedData = Map<String, dynamic>.from(problemData);
+      updatedData['lastAttemptId'] = attemptId;
+      _cache.set(cacheKey, updatedData);
     }
 
     notifyListeners();
@@ -178,9 +216,9 @@ class UserDataProvider with ChangeNotifier {
 
   // 특정 문제의 사용자 데이터 조회
   Future<Map<String, dynamic>?> getProblemData(String problemId) async {
-    if (_problemDataCache.containsKey(problemId)) {
-      return _problemDataCache[problemId];
-    }
+    final cacheKey = 'problems:$problemId';
+    final cachedData = _cache.get<Map<String, dynamic>>(cacheKey);
+    if (cachedData != null) return cachedData;
 
     final userId = _firebaseService.currentUser?.uid;
     if (userId == null) return null;
@@ -192,12 +230,12 @@ class UserDataProvider with ChangeNotifier {
       );
 
       if (data != null) {
-        _problemDataCache[problemId] = data;
+        _cache.set(cacheKey, data);
       }
 
       return data;
     } catch (e) {
-      print('Error getting problem data: $e');
+      _setError('데이터를 로드하는 과정에서 오류가 발생했습니다: $e');
       return null;
     }
   }
@@ -213,14 +251,20 @@ class UserDataProvider with ChangeNotifier {
         problemId: problemId,
       );
 
-      if (_problemDataCache.containsKey(problemId)) {
-        _problemDataCache[problemId]?['isFavorite'] = newState;
+      // 개별 문제 캐시 업데이트
+      final cacheKey = 'problems:$problemId';
+      final problemData = _cache.get<Map<String, dynamic>>(cacheKey);
+      if (problemData != null) {
+        final updatedData = Map<String, dynamic>.from(problemData);
+        updatedData['isFavorite'] = newState;
+        _cache.set(cacheKey, updatedData);
       }
+
       _favoriteProblems = await getFavoriteProblems();
       notifyListeners();
       return newState;
     } catch (e) {
-      print('Error toggling favorite: $e');
+      _setError('오류가 발생했습니다: $e');
       rethrow;
     }
   }
@@ -231,46 +275,70 @@ class UserDataProvider with ChangeNotifier {
       final userId = _firebaseService.currentUser?.uid;
       if (userId == null) return [];
 
+      // 캐시 확인
+      final cacheKey = 'favorites:$userId';
+      final cachedData = _cache.get<List<Problem>>(cacheKey);
+      if (cachedData != null) {
+        return cachedData;
+      }
+
       final favoriteIds =
           await _problemUserDataService.getFavoriteProblemIds(userId);
-      print(
-          "⭐️ getFavoriteProblems - favoriteIds: $favoriteIds"); // favoriteIds 확인
+
       if (favoriteIds.isEmpty) return [];
 
-      final QuerySnapshot problemsSnapshot = await _firestore
-          .collection('problems')
-          .where(FieldPath.documentId, whereIn: favoriteIds)
-          .get();
+      List<Problem> allFavoriteProblems = [];
 
-      print(
-          "⭐️ getFavoriteProblems - found problems: ${problemsSnapshot.docs.length}");
+      // 10개씩 청크로 나누어 처리
+      // TODO: 무한 스크롤 구현
+      for (var i = 0; i < favoriteIds.length; i += 10) {
+        var end = (i + 10 < favoriteIds.length) ? i + 10 : favoriteIds.length;
+        var chunk = favoriteIds.sublist(i, end);
 
-      return problemsSnapshot.docs
-          .map((doc) => Problem(
-                id: doc.id,
-                title: doc['title'],
-                description: doc['description'],
-                problemImage: doc['problemImage'],
-                solutionImage: doc['solutionImage'],
-                imageUrl: doc['imageUrl'],
-                tags: List<String>.from(doc['tags']),
-                problemSetId: doc['problemSetId'],
-                correctAnswer: doc['correctAnswer'],
-              ))
-          .toList();
+        final QuerySnapshot problemsSnapshot = await _firestore
+            .collection('problems')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+
+        final chunkProblems = problemsSnapshot.docs
+            .map((doc) => Problem(
+                  id: doc.id,
+                  title: doc['title'],
+                  description: doc['description'],
+                  problemImage: doc['problemImage'],
+                  solutionImage: doc['solutionImage'],
+                  imageUrl: doc['imageUrl'],
+                  tags: List<String>.from(doc['tags']),
+                  problemSetId: doc['problemSetId'],
+                  correctAnswer: doc['correctAnswer'],
+                ))
+            .toList();
+
+        allFavoriteProblems.addAll(chunkProblems);
+      }
+
+      // 캐시에 저장
+      _cache.set(cacheKey, allFavoriteProblems);
+
+      return allFavoriteProblems;
     } catch (e) {
-      print("❌ getFavoriteProblems error: $e"); // 에러 확인
-      print("❌ Error stack trace: ${StackTrace.current}"); // 스택 트레이스 확인
-      _setError('Failed to load favorite problems: $e');
+      _setError('즐겨찾기한 문제를 로드하는 과정에서 오류가 발생했습니다: $e');
       return [];
     }
   }
 
   // 틀린 문제 목록 조회
   Future<List<Problem>> getIncorrectProblems() async {
+    final cacheKey = 'problems:incorrect';
+
     try {
       final userId = _firebaseService.currentUser?.uid;
       if (userId == null) return [];
+
+      final cachedData = _cache.get<List<Problem>>(cacheKey);
+      if (cachedData != null) {
+        return cachedData;
+      }
 
       // lastAttemptIsCorrect = false인 문제 ID 가져오기
       final querySnapshot = await _firestore
@@ -284,60 +352,66 @@ class UserDataProvider with ChangeNotifier {
       if (incorrectProblemIds.isEmpty) return [];
 
       // 문제 상세 정보 가져오기
-      final problemsSnapshot = await _firestore
-          .collection('problems')
-          .where(FieldPath.documentId, whereIn: incorrectProblemIds)
-          .get();
+      // TODO: 무한 스크롤 구현
+      List<Problem> allIncorrectProblems = [];
+      for (var i = 0; i < incorrectProblemIds.length; i += 10) {
+        var end = (i + 10 < incorrectProblemIds.length)
+            ? i + 10
+            : incorrectProblemIds.length;
+        var chunk = incorrectProblemIds.sublist(i, end);
 
-      return problemsSnapshot.docs
-          .map((doc) => Problem(
-                id: doc.id,
-                title: doc['title'],
-                description: doc['description'],
-                problemImage: doc['problemImage'],
-                solutionImage: doc['solutionImage'],
-                imageUrl: doc['imageUrl'],
-                tags: List<String>.from(doc['tags']),
-                problemSetId: doc['problemSetId'],
-                correctAnswer: doc['correctAnswer'],
-              ))
-          .toList();
+        final problemsSnapshot = await _firestore
+            .collection('problems')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+
+        final problems = problemsSnapshot.docs
+            .map((doc) => Problem(
+                  id: doc.id,
+                  title: doc['title'],
+                  description: doc['description'],
+                  problemImage: doc['problemImage'],
+                  solutionImage: doc['solutionImage'],
+                  imageUrl: doc['imageUrl'],
+                  tags: List<String>.from(doc['tags']),
+                  problemSetId: doc['problemSetId'],
+                  correctAnswer: doc['correctAnswer'],
+                ))
+            .toList();
+
+        allIncorrectProblems.addAll(problems);
+      }
+
+      // 캐시에 저장
+      _cache.set(cacheKey, allIncorrectProblems);
+
+      return allIncorrectProblems;
     } catch (e) {
-      _setError('Failed to load incorrect problems: $e');
+      _setError('오답노트 문제를 받아오는 과정에서 오류가 발생했습니다: $e');
       return [];
     }
-  }
-
-  // 캐시 무효화
-  void invalidateProblemCache(String problemId) {
-    _problemDataCache.remove(problemId);
-    notifyListeners();
-  }
-
-  // 캐시 무효화 메서드 추가
-  void invalidateProblemSetsCache() {
-    _cachedProblemSets = null;
-    _lastProblemSetsFetchTime = null;
   }
 
   // Get purchased problem sets
   Future<List<ProblemSet>> getPurchasedProblemSets() async {
     final timeout = DateTime.now().add(Duration(seconds: 10));
+    final cacheKey = 'problemSets:purchased';
 
     try {
-      if (_cachedProblemSets != null &&
-          _lastProblemSetsFetchTime != null &&
-          DateTime.now().difference(_lastProblemSetsFetchTime!) <
-              Duration(minutes: 15)) {
-        return _cachedProblemSets!;
+      // 캐시된 데이터 확인
+      final cachedData = _cache.get<List<ProblemSet>>(cacheKey);
+      if (cachedData != null) {
+        return cachedData;
       }
 
       while (_userData == null) {
         if (DateTime.now().isAfter(timeout)) {
-          throw Exception('Timeout waiting for user data');
+          _setError('TimeOut 에러가 발생했습니다.');
+          return [];
         }
         if (_status == UserDataStatus.error) {
-          throw Exception('Failed to load user data');
+          _setError('사용자 데이터 로드에 실패했습니다.');
+          return [];
         }
         await Future.delayed(Duration(milliseconds: 100));
       }
@@ -376,10 +450,10 @@ class UserDataProvider with ChangeNotifier {
 
         allProblemSets.addAll(problemSets);
       }
-      _cachedProblemSets = allProblemSets;
-      _lastProblemSetsFetchTime = DateTime.now();
+      final sortedProblemSets = SortService().sortProblemSets(allProblemSets);
+      _cache.set(cacheKey, sortedProblemSets);
 
-      return SortService().sortProblemSets(allProblemSets);
+      return sortedProblemSets;
     } catch (e) {
       _setError('구입 문제꾸러미를 불러오는데 실패했습니다: $e');
       return [];
@@ -388,7 +462,15 @@ class UserDataProvider with ChangeNotifier {
 
   // Get problems by problem set ID
   Future<List<Problem>> getProblemsByProblemSetId(String problemSetId) async {
+    final cacheKey = 'problemSets:$problemSetId:problems';
+
     try {
+      // 캐시된 데이터 확인
+      final cachedData = _cache.get<List<Problem>>(cacheKey);
+      if (cachedData != null) {
+        return cachedData;
+      }
+
       final querySnapshot = await _firestore
           .collection('problems')
           .where('problemSetId', isEqualTo: problemSetId)
@@ -408,7 +490,7 @@ class UserDataProvider with ChangeNotifier {
               ))
           .toList();
     } catch (e) {
-      _setError('Failed to load problems: $e');
+      _setError('문제를 로드하는데 실패했습니다: $e');
       return [];
     }
   }
