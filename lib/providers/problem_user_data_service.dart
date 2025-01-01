@@ -63,33 +63,44 @@ class ProblemUserDataService {
     required String userId,
     required String problemId,
   }) async {
-    final docRef = _getDocumentRef(userId, problemId);
-    bool newValue = false;
+    try {
+      bool newValue = false;
+      await _firestore.runTransaction((transaction) async {
+        final docRef = _getDocumentRef(userId, problemId);
+        final doc = await transaction.get(docRef);
 
-    await _firestore.runTransaction((transaction) async {
-      final doc = await transaction.get(docRef);
+        if (!doc.exists) {
+          // 문서가 없는 경우, 새로운 문서를 생성하며 즐겨찾기를 true로 설정
+          transaction.set(
+              docRef,
+              {
+                'userId': userId,
+                'problemId': problemId,
+                'isFavorite': true,
+                'isSolved': false,
+                'totalAttempts': 0,
+                'correctAttempts': 0,
+                'createdAt': FieldValue.serverTimestamp(),
+                'lastUpdatedAt': FieldValue.serverTimestamp(),
+              },
+              SetOptions(merge: true));
+          newValue = true;
+        } else {
+          // 기존 문서가 있는 경우, 즐겨찾기 상태를 토글
+          final data = doc.data() as Map<String, dynamic>;
+          newValue = !(data['isFavorite'] ?? false);
+          transaction.update(docRef, {
+            'isFavorite': newValue,
+            'lastUpdatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+      });
 
-      if (!doc.exists) {
-        // 문서가 없을 경우 새로 생성
-        newValue = true;
-        transaction.set(docRef, {
-          'userId': userId,
-          'problemId': problemId,
-          'isFavorite': true,
-          'isSolved': false,
-          'totalAttempts': 0,
-          'correctAttempts': 0,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      } else {
-        // 기존 즐겨찾기 상태를 토글
-        final data = doc.data() as Map<String, dynamic>?;
-        newValue = !(data?['isFavorite'] ?? false);
-        transaction.update(docRef, {'isFavorite': newValue});
-      }
-    });
-
-    return newValue;
+      return newValue;
+    } catch (e) {
+      print('Error in toggleFavorite: $e');
+      rethrow;
+    }
   }
 
   /// 특정 사용자의 즐겨찾기한 문제 ID 목록을 가져옵니다.

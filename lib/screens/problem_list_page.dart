@@ -250,7 +250,7 @@ class _ProblemListItemState extends State<ProblemListItem> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('즐겨찾기 설정 중 오류가 발생했습니다.')),
+          SnackBar(content: Text('즐겨찾기 설정 중 오류가 발생했습니다:$e')),
         );
       }
     } finally {
