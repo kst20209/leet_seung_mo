@@ -18,6 +18,9 @@ class UserDataProvider with ChangeNotifier {
       ProblemUserDataService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  final ValueNotifier<UserDataStatus> statusNotifier =
+      ValueNotifier(UserDataStatus.initial);
+
   Map<String, dynamic>? _userData;
   UserDataStatus _status = UserDataStatus.initial;
   String? _error;
@@ -47,6 +50,10 @@ class UserDataProvider with ChangeNotifier {
   List<ProblemSet>? _cachedProblemSets;
   DateTime? _lastProblemSetsFetchTime;
 
+  final ValueNotifier<bool> loadingProblemSets = ValueNotifier(false);
+  final ValueNotifier<bool> loadingFavorites = ValueNotifier(false);
+  final ValueNotifier<bool> loadingIncorrect = ValueNotifier(false);
+
   Future<void> loadAllProblemData() async {
     if (_isLoadingProblems) return;
     _isLoadingProblems = true;
@@ -71,17 +78,19 @@ class UserDataProvider with ChangeNotifier {
   // 초기 데이터 로드
   Future<void> loadUserData(String uid) async {
     try {
-      _status = UserDataStatus.loading;
-      notifyListeners();
+      statusNotifier.value = UserDataStatus.loading;
 
       DocumentSnapshot doc = await _firebaseService.getDocument('users', uid);
-      _userData = doc.data() as Map<String, dynamic>?;
-      _status = UserDataStatus.loaded;
-      notifyListeners();
+      final newData = doc.data() as Map<String, dynamic>?;
+
+      if (!mapEquals(_userData, newData)) {
+        _userData = newData;
+        notifyListeners();
+      }
+      statusNotifier.value = UserDataStatus.loaded;
     } catch (e) {
       _error = e.toString();
-      _status = UserDataStatus.error;
-      notifyListeners();
+      statusNotifier.value = UserDataStatus.error;
     }
   }
 
