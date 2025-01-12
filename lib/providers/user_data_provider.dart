@@ -386,6 +386,7 @@ class UserDataProvider with ChangeNotifier {
   }
 
   // Get purchased problem sets
+  // TODO: 구입한 문제꾸러미가 cache에 의해 보이지 않는 문제 해결
   Future<List<ProblemSet>> getPurchasedProblemSets() async {
     final timeout = DateTime.now().add(Duration(seconds: 10));
     final cacheKey = 'problemSets:purchased';
