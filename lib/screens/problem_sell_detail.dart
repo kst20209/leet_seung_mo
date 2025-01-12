@@ -16,8 +16,16 @@ class ProblemSellDetail extends StatefulWidget {
 }
 
 class _ProblemSellDetailState extends State<ProblemSellDetail> {
-  final ProblemSetPurchaseService _purchaseService =
-      ProblemSetPurchaseService();
+  late final ProblemSetPurchaseService _purchaseService;
+
+  @override
+  void initState() {
+    super.initState();
+    _purchaseService = ProblemSetPurchaseService(
+      context.read<UserDataProvider>(),
+    );
+  }
+
   bool _isPurchasing = false;
 
   Future<void> _purchaseProblemSet() async {

@@ -1,10 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:leet_seung_mo/providers/user_data_provider.dart';
 import 'point_transaction_service.dart';
 
 class ProblemSetPurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final PointTransactionService _pointTransactionService =
       PointTransactionService();
+  final UserDataProvider _userDataProvider;
+
+  ProblemSetPurchaseService(this._userDataProvider);
 
   Future<void> purchaseProblemSet({
     required String userId,
@@ -58,6 +62,9 @@ class ProblemSetPurchaseService {
         'purchasedProblemSets': FieldValue.arrayUnion([problemSetId]),
         'lastPurchasedAt': FieldValue.serverTimestamp(),
       });
+
+      // 7. 캐시 무효화
+      _userDataProvider.invalidateCache('problemSets');
     } catch (e) {
       throw Exception('구매 처리 중 오류가 발생했습니다: $e');
     }

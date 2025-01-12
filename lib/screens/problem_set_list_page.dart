@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/providers/auth_provider.dart';
 import 'package:leet_seung_mo/utils/sort_service.dart';
 import 'package:provider/provider.dart';
 import '../widgets/tag_chip.dart';
@@ -31,6 +32,12 @@ class _ProblemSetListPageState extends State<ProblemSetListPage> {
         _isLoading = true;
         _error = null;
       });
+
+      final userDataProvider = context.read<UserDataProvider>();
+      final authProvider = context.read<AppAuthProvider>();
+
+      // 먼저 전체 데이터 새로고침
+      await userDataProvider.refreshUserData(authProvider.user!.uid);
 
       final problemSets =
           await context.read<UserDataProvider>().getPurchasedProblemSets();
