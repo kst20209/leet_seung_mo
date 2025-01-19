@@ -282,7 +282,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
           top: 20,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width - 40,
+              maxWidth: min(400, MediaQuery.of(context).size.width - 40),
             ),
             child: CustomNetworkImage(
               imageUrl: widget.problem.problemImage,
@@ -343,7 +343,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
               ),
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width - 40,
+                  maxWidth: min(400, MediaQuery.of(context).size.width - 40),
                 ),
                 child: CustomNetworkImage(
                   imageUrl: widget.problem.solutionImage,
