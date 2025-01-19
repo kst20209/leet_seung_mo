@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'mypage/inquiry_page.dart';
@@ -46,19 +47,21 @@ class _MyPageState extends State<MyPage> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildProfileSection(context),
-              SizedBox(height: 16),
-              _buildPointCard(context),
-              Divider(height: 32),
-              _buildStatisticsPreview(context),
-              Divider(height: 32),
-              _buildSettingsList(context),
-            ],
+        child: ResponsiveContainer(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildProfileSection(context),
+                SizedBox(height: 16),
+                _buildPointCard(context),
+                Divider(height: 32),
+                _buildStatisticsPreview(context),
+                Divider(height: 32),
+                _buildSettingsList(context),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../widgets/tag_chip.dart';
 import '../widgets/problem_set_item.dart';
@@ -87,55 +88,58 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
         title: const Text('문제 상점'),
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          FilterSection(
-            isExpanded: _isFilterExpanded,
-            onExpandToggle: () {
-              setState(() {
-                _isFilterExpanded = !_isFilterExpanded;
-              });
-            },
-            selectedCategories: _selectedCategories,
-            selectedSubCategories: _selectedSubCategories,
-            selectedFields: _selectedFields,
-            onFilterUpdate: _updateFilter,
-            categorySubCategories: _categorySubCategories,
-            fields: _fields,
-          ),
-          if (_problemSets.isEmpty)
-            Expanded(
-              child: Center(
-                child: Text(
-                  '해당하는 문제꾸러미가 없습니다',
-                  style: Theme.of(context).textTheme.titleMedium,
+      body: ResponsiveContainer(
+        child: Column(
+          children: [
+            FilterSection(
+              isExpanded: _isFilterExpanded,
+              onExpandToggle: () {
+                setState(() {
+                  _isFilterExpanded = !_isFilterExpanded;
+                });
+              },
+              selectedCategories: _selectedCategories,
+              selectedSubCategories: _selectedSubCategories,
+              selectedFields: _selectedFields,
+              onFilterUpdate: _updateFilter,
+              categorySubCategories: _categorySubCategories,
+              fields: _fields,
+            ),
+            if (_problemSets.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '해당하는 문제꾸러미가 없습니다',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: Consumer<UserDataProvider>(
+                  builder: (context, userDataProvider, _) {
+                    return ListView.builder(
+                      itemCount: _problemSets.length,
+                      itemBuilder: (context, index) {
+                        final problemSet = _problemSets[index];
+                        final purchasedSets =
+                            userDataProvider.userData?['purchasedProblemSets']
+                                    as List<dynamic>? ??
+                                [];
+                        final isPurchased =
+                            purchasedSets.contains(problemSet.id);
+
+                        return ProblemSetItem(
+                          problemSet: problemSet,
+                          isPurchased: isPurchased,
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
-            )
-          else
-            Expanded(
-              child: Consumer<UserDataProvider>(
-                builder: (context, userDataProvider, _) {
-                  return ListView.builder(
-                    itemCount: _problemSets.length,
-                    itemBuilder: (context, index) {
-                      final problemSet = _problemSets[index];
-                      final purchasedSets =
-                          userDataProvider.userData?['purchasedProblemSets']
-                                  as List<dynamic>? ??
-                              [];
-                      final isPurchased = purchasedSets.contains(problemSet.id);
-
-                      return ProblemSetItem(
-                        problemSet: problemSet,
-                        isPurchased: isPurchased,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

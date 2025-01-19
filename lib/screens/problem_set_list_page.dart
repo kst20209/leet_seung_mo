@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:leet_seung_mo/utils/sort_service.dart';
 import 'package:provider/provider.dart';
 import '../widgets/tag_chip.dart';
@@ -61,9 +62,11 @@ class _ProblemSetListPageState extends State<ProblemSetListPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadProblemSets,
-        child: _buildContent(),
+      body: ResponsiveContainer(
+        child: RefreshIndicator(
+          onRefresh: _loadProblemSets,
+          child: _buildContent(),
+        ),
       ),
     );
   }
