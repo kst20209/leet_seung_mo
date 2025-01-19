@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../widgets/tag_chip.dart';
 import '../models/models.dart';
@@ -139,9 +140,11 @@ class _ProblemListPageState extends State<ProblemListPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadProblems,
-        child: _buildContent(),
+      body: ResponsiveContainer(
+        child: RefreshIndicator(
+          onRefresh: _loadProblems,
+          child: _buildContent(),
+        ),
       ),
     );
   }
@@ -186,6 +189,7 @@ class _ProblemListPageState extends State<ProblemListPage> {
 
     return ListView.builder(
       itemCount: _problems!.length,
+      padding: const EdgeInsets.symmetric(vertical: 8),
       itemBuilder: (context, index) {
         final problem = _problems![index];
         return ProblemListItem(problem: problem);

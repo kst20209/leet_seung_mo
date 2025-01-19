@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:leet_seung_mo/widgets/tag_chip.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
@@ -233,7 +234,9 @@ class _ProblemSellDetailState extends State<ProblemSellDetail> {
           return CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 200.0,
+                expandedHeight: MediaQuery.of(context).size.width > 600
+                    ? 300.0 // 태블릿
+                    : 200.0,
                 floating: false,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
@@ -241,39 +244,46 @@ class _ProblemSellDetailState extends State<ProblemSellDetail> {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.problemSet.title,
-                        style: Theme.of(context).textTheme.displayMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      TagList(tags: widget.problemSet.tags),
-                      const SizedBox(height: 16),
-                      Text(
-                        '총 문제 수: ${widget.problemSet.totalProblems}',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        widget.problemSet.description,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '가격: ${widget.problemSet.price}P',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          _buildPurchaseButton(isPurchased),
-                        ],
-                      ),
-                    ],
+                child: ResponsiveContainer(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.width > 600
+                              ? 16 // 태블릿
+                              : 0,
+                        ),
+                        Text(
+                          widget.problemSet.title,
+                          style: Theme.of(context).textTheme.displayMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        TagList(tags: widget.problemSet.tags),
+                        const SizedBox(height: 16),
+                        Text(
+                          '총 문제 수: ${widget.problemSet.totalProblems}',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.problemSet.description,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '가격: ${widget.problemSet.price}P',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            _buildPurchaseButton(isPurchased),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -62,6 +62,7 @@ class DataRepository {
               tags: List<String>.from(doc['tags']),
               problemSetId: doc['problemSetId'],
               correctAnswer: doc['correctAnswer'],
+              isWideSolution: doc['isWideSolution'] as bool? ?? false,
             ))
         .toList();
   }

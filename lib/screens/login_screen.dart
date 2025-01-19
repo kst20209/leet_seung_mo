@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:leet_seung_mo/main.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -99,59 +100,61 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  '로그인',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 40),
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: InputDecoration(
-                    labelText: '휴대폰 번호',
-                    border: OutlineInputBorder(),
-                    enabled: !_codeSent,
-                  ),
-                  keyboardType: TextInputType.phone,
-                ),
-                SizedBox(height: 16),
-                if (_codeSent)
-                  TextFormField(
-                    controller: _codeController,
-                    decoration: InputDecoration(
-                      labelText: '인증번호',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                SizedBox(height: 16),
-                if (_error != null)
+      body: ResponsiveContainer(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                   Text(
-                    _error!,
-                    style: TextStyle(color: Colors.red),
+                    '로그인',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
                     textAlign: TextAlign.center,
                   ),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _codeSent ? _verifyCode : _verifyPhone,
-                  child: Text(_codeSent ? '로그인' : '인증번호 받기'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                  SizedBox(height: 40),
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: InputDecoration(
+                      labelText: '휴대폰 번호',
+                      border: OutlineInputBorder(),
+                      enabled: !_codeSent,
+                    ),
+                    keyboardType: TextInputType.phone,
                   ),
-                ),
-              ],
+                  SizedBox(height: 16),
+                  if (_codeSent)
+                    TextFormField(
+                      controller: _codeController,
+                      decoration: InputDecoration(
+                        labelText: '인증번호',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  SizedBox(height: 16),
+                  if (_error != null)
+                    Text(
+                      _error!,
+                      style: TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _codeSent ? _verifyCode : _verifyPhone,
+                    child: Text(_codeSent ? '로그인' : '인증번호 받기'),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -36,6 +36,7 @@ class Problem {
   final List<String> tags;
   final String problemSetId;
   final String correctAnswer;
+  final bool? isWideSolution;
 
   Problem({
     required this.id,
@@ -47,5 +48,6 @@ class Problem {
     required this.tags,
     required this.problemSetId,
     required this.correctAnswer,
+    this.isWideSolution,
   });
 }

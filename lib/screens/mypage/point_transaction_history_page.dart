@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/point_transaction_service.dart';
@@ -108,100 +109,105 @@ class _PointTransactionHistoryPageState
         title: const Text('포인트 내역'),
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          Container(
-            width: contentWidth,
-            margin: EdgeInsets.symmetric(
-              horizontal: (screenWidth - contentWidth) / 2,
-              vertical: 16,
-            ),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+      body: ResponsiveContainer(
+        child: Column(
+          children: [
+            Container(
+              width: contentWidth,
+              margin: EdgeInsets.symmetric(
+                horizontal: (screenWidth - contentWidth) / 2,
+                vertical: 16,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SegmentedButton<TransactionFilter>(
-                  selected: {_currentFilter},
-                  onSelectionChanged: (Set<TransactionFilter> selected) {
-                    setState(() {
-                      _currentFilter = selected.first;
-                      _loadTransactions();
-                    });
-                  },
-                  segments: const [
-                    ButtonSegment(
-                      value: TransactionFilter.all,
-                      label: Text('전체'),
-                    ),
-                    ButtonSegment(
-                      value: TransactionFilter.credit,
-                      label: Text('적립'),
-                    ),
-                    ButtonSegment(
-                      value: TransactionFilter.debit,
-                      label: Text('사용'),
-                    ),
-                  ],
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SegmentedButton<TransactionFilter>(
+                    selected: {_currentFilter},
+                    onSelectionChanged: (Set<TransactionFilter> selected) {
+                      setState(() {
+                        _currentFilter = selected.first;
+                        _loadTransactions();
+                      });
+                    },
+                    segments: const [
+                      ButtonSegment(
+                        value: TransactionFilter.all,
+                        label: Text('전체'),
+                      ),
+                      ButtonSegment(
+                        value: TransactionFilter.credit,
+                        label: Text('적립'),
+                      ),
+                      ButtonSegment(
+                        value: TransactionFilter.debit,
+                        label: Text('사용'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _transactions.isEmpty
-                    ? Center(
-                        child: Text(
-                          '거래 내역이 없습니다',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.grey,
-                                  ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: (screenWidth - contentWidth) / 2,
-                        ),
-                        itemCount: _transactions.length,
-                        itemBuilder: (context, index) {
-                          final transaction = _transactions[index];
-                          final previousDate = index > 0
-                              ? DateFormat('yyyy-MM-dd').format(
-                                  _getDateFromTimestamp(
-                                      _transactions[index - 1]['completedAt']))
-                              : '';
-                          final currentDate = DateFormat('yyyy-MM-dd').format(
-                              _getDateFromTimestamp(
-                                  transaction['completedAt']));
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (currentDate != previousDate)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                                  child: Text(
-                                    currentDate,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          color: Colors.grey[600],
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _transactions.isEmpty
+                      ? Center(
+                          child: Text(
+                            '거래 내역이 없습니다',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Colors.grey,
                                 ),
-                              TransactionCard(transaction: transaction),
-                            ],
-                          );
-                        },
-                      ),
-          ),
-        ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: (screenWidth - contentWidth) / 2,
+                          ),
+                          itemCount: _transactions.length,
+                          itemBuilder: (context, index) {
+                            final transaction = _transactions[index];
+                            final previousDate = index > 0
+                                ? DateFormat('yyyy-MM-dd').format(
+                                    _getDateFromTimestamp(
+                                        _transactions[index - 1]
+                                            ['completedAt']))
+                                : '';
+                            final currentDate = DateFormat('yyyy-MM-dd').format(
+                                _getDateFromTimestamp(
+                                    transaction['completedAt']));
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (currentDate != previousDate)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 16, 16, 8),
+                                    child: Text(
+                                      currentDate,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ),
+                                TransactionCard(transaction: transaction),
+                              ],
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }
