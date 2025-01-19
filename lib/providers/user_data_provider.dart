@@ -304,6 +304,11 @@ class UserDataProvider with ChangeNotifier {
                   tags: List<String>.from(doc['tags']),
                   problemSetId: doc['problemSetId'],
                   correctAnswer: doc['correctAnswer'],
+                  isWideSolution: (doc.data() as Map<String, dynamic>?)
+                              ?.containsKey('isWideSolution') ==
+                          true
+                      ? (doc['isWideSolution'] as bool?) ?? false
+                      : false,
                 ))
             .toList();
 
@@ -369,6 +374,9 @@ class UserDataProvider with ChangeNotifier {
                   tags: List<String>.from(doc['tags']),
                   problemSetId: doc['problemSetId'],
                   correctAnswer: doc['correctAnswer'],
+                  isWideSolution: doc.data().containsKey('isWideSolution')
+                      ? doc['isWideSolution'] as bool
+                      : false,
                 ))
             .toList();
 
@@ -481,6 +489,9 @@ class UserDataProvider with ChangeNotifier {
                 tags: List<String>.from(doc['tags']),
                 problemSetId: doc['problemSetId'],
                 correctAnswer: doc['correctAnswer'],
+                isWideSolution: doc.data().containsKey('isWideSolution')
+                    ? doc['isWideSolution'] as bool
+                    : false,
               ))
           .toList();
     } catch (e) {

@@ -343,7 +343,9 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
               ),
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: min(400, MediaQuery.of(context).size.width - 40),
+                  maxWidth: widget.problem.isWideSolution ?? false
+                      ? min(800, MediaQuery.of(context).size.width - 40)
+                      : min(400, MediaQuery.of(context).size.width - 40),
                 ),
                 child: CustomNetworkImage(
                   imageUrl: widget.problem.solutionImage,
