@@ -189,6 +189,7 @@ class _ProblemListPageState extends State<ProblemListPage> {
 
     return ListView.builder(
       itemCount: _problems!.length,
+      padding: const EdgeInsets.symmetric(vertical: 8),
       itemBuilder: (context, index) {
         final problem = _problems![index];
         return ProblemListItem(problem: problem);
