@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/utils/responsive_container.dart';
 import '../../widgets/build_text_field.dart';
 import '../../utils/user_repository.dart';
 import '../../utils/firebase_service.dart';
@@ -31,75 +32,77 @@ class _NicknameScreenState extends State<NicknameScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle('닉네임'),
-                      NicknameTextFieldWithButton(
-                        controller: _nicknameController,
-                        onPressed: _checkNicknameDuplicate,
-                        validator: _validateNickname,
-                        isNicknameAvailable: _isNicknameAvailable,
-                      ),
-                      SizedBox(height: 32),
-                      _buildSectionTitle('성별'),
-                      _buildSelectionWidget(
-                        options: ['남', '여', '무응답'],
-                        selectedOption: _selectedGender,
-                        onSelect: (value) =>
-                            setState(() => _selectedGender = value),
-                      ),
-                      SizedBox(height: 24),
-                      _buildSectionTitle('직업'),
-                      _buildSelectionWidget(
-                        options: ['학생', '대졸', '직장인', '무응답'],
-                        selectedOption: _selectedOccupation,
-                        onSelect: (value) =>
-                            setState(() => _selectedOccupation = value),
-                      ),
-                      SizedBox(height: 24),
-                      _buildSectionTitle('서비스 인지 경로'),
-                      _buildSelectionWidget(
-                        options: [
-                          'Instagram 광고',
-                          '인터넷 검색',
-                          '지인 추천',
-                          '앱스토어',
-                          '기타',
-                          '무응답'
-                        ],
-                        selectedOption: _selectedDiscoveryMethod,
-                        onSelect: (value) =>
-                            setState(() => _selectedDiscoveryMethod = value),
-                      ),
-                    ],
+      body: ResponsiveContainer(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle('닉네임'),
+                        NicknameTextFieldWithButton(
+                          controller: _nicknameController,
+                          onPressed: _checkNicknameDuplicate,
+                          validator: _validateNickname,
+                          isNicknameAvailable: _isNicknameAvailable,
+                        ),
+                        SizedBox(height: 32),
+                        _buildSectionTitle('성별'),
+                        _buildSelectionWidget(
+                          options: ['남', '여', '무응답'],
+                          selectedOption: _selectedGender,
+                          onSelect: (value) =>
+                              setState(() => _selectedGender = value),
+                        ),
+                        SizedBox(height: 24),
+                        _buildSectionTitle('직업'),
+                        _buildSelectionWidget(
+                          options: ['학생', '대졸', '직장인', '무응답'],
+                          selectedOption: _selectedOccupation,
+                          onSelect: (value) =>
+                              setState(() => _selectedOccupation = value),
+                        ),
+                        SizedBox(height: 24),
+                        _buildSectionTitle('서비스 인지 경로'),
+                        _buildSelectionWidget(
+                          options: [
+                            'Instagram 광고',
+                            '인터넷 검색',
+                            '지인 추천',
+                            '앱스토어',
+                            '기타',
+                            '무응답'
+                          ],
+                          selectedOption: _selectedDiscoveryMethod,
+                          onSelect: (value) =>
+                              setState(() => _selectedDiscoveryMethod = value),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Container(
-            width: double.infinity,
-            child: ElevatedButton(
-              child: Text('가입 완료', style: TextStyle(fontSize: 18)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                padding: EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+            Container(
+              width: double.infinity,
+              child: ElevatedButton(
+                child: Text('가입 완료', style: TextStyle(fontSize: 18)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: _submitForm,
               ),
-              onPressed: _submitForm,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
