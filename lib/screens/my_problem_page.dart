@@ -15,29 +15,40 @@ class MyProblemPage extends StatefulWidget {
 }
 
 class _MyProblemPageState extends State<MyProblemPage> {
+  late final VoidCallback listener;
+  UserDataProvider? _provider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Provider 참조를 안전하게 저장
+    _provider = context.read<UserDataProvider>();
+  }
+
   @override
   void initState() {
     super.initState();
     // 컴포넌트가 마운트될 때 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<UserDataProvider>();
-      provider.addListener(() {
-        if (provider.error != null && mounted) {
+      listener = () {
+        if (_provider?.error != null && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(provider.error!),
+              content: Text(_provider!.error!),
               backgroundColor: Colors.red,
             ),
           );
         }
-      });
-      provider.loadAllProblemData();
+      };
+      // 저장된 리스너 함수를 추가
+      _provider?.addListener(listener);
+      _provider?.loadAllProblemData();
     });
   }
 
   @override
   void dispose() {
-    context.read<UserDataProvider>().removeListener(() {});
+    _provider?.removeListener(listener);
     super.dispose();
   }
 

@@ -46,12 +46,6 @@ class FirebaseService {
   }
 
   // Auth methods
-  Future<UserCredential> createUserWithEmailAndPassword(
-      String email, String password) async {
-    return await _auth.createUserWithEmailAndPassword(
-        email: email, password: password);
-  }
-
   Future<void> createUserDocument(
       String uid, Map<String, dynamic> userData) async {
     // 보안을 위해 전화번호 관련 데이터는 제외
@@ -59,8 +53,8 @@ class FirebaseService {
       ..removeWhere((key, value) => key == 'phoneNumber')
       ..addAll({
         'createdAt': FieldValue.serverTimestamp(),
-        'isPhoneVerified': true,
-        'phoneVerifiedAt': FieldValue.serverTimestamp(),
+        'currentPoints': 0,
+        'purchasedProblemSets': []
       });
 
     await _firestore
@@ -92,10 +86,6 @@ class FirebaseService {
       codeSent: codeSent,
       codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
     );
-  }
-
-  Future<void> sendEmailVerification() async {
-    await _auth.currentUser?.sendEmailVerification();
   }
 
   Future<void> signOut() async {

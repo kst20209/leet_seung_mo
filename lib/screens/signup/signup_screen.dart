@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/main.dart';
 import 'build_terms_page.dart';
-import 'email_password_screen.dart';
 import 'phone_verification_screen.dart';
 import 'nickname_screen.dart';
 import 'build_thankyou_page.dart';
@@ -30,43 +29,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: NeverScrollableScrollPhysics(),
-        children: [
-          BuildTermsPage(
-            agreedToTerms: _agreedToTerms,
-            onAgreedToTermsChanged: (value) {
-              setState(() {
-                _agreedToTerms = value;
-              });
-            },
-            onNextPressed: () {
-              if (_agreedToTerms) {
-                _goToNextPage();
-              }
-            },
-          ),
-          EmailPasswordScreen(
-            onNext: _goToNextPage,
-          ),
-          PhoneVerificationScreen(
-            onNext: _goToNextPage,
-          ),
-          NicknameScreen(
-            onNext: _goToNextPage,
-          ),
-          BuildThankYouPage(
-            onStartPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => MainScreen()),
-                (route) => false,
-              );
-            },
-          ),
-        ],
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: PageView(
+          controller: _pageController,
+          physics: NeverScrollableScrollPhysics(),
+          children: [
+            BuildTermsPage(
+              agreedToTerms: _agreedToTerms,
+              onAgreedToTermsChanged: (value) {
+                setState(() {
+                  _agreedToTerms = value;
+                });
+              },
+              onNextPressed: () {
+                if (_agreedToTerms) {
+                  _goToNextPage();
+                }
+              },
+            ),
+            PhoneVerificationScreen(
+              onNext: _goToNextPage,
+            ),
+            NicknameScreen(
+              onNext: _goToNextPage,
+            ),
+            BuildThankYouPage(
+              onStartPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => MainScreen()),
+                  (route) => false,
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'dart:async';
+import '../../main.dart';
 import '../../widgets/build_text_field.dart';
 import '../../utils/firebase_service.dart';
-import '../../utils/user_repository.dart';
+import '../../utils/auth_repository.dart';
 
 class PhoneVerificationScreen extends StatefulWidget {
   final Future<void> Function() onNext;
@@ -20,7 +21,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _codeController = TextEditingController();
-  final UserRepository _userRepository = UserRepository(FirebaseService());
+  final AuthRepository _authRepository = AuthRepository(FirebaseService());
 
   String? _phoneError;
   String? _codeError;
@@ -81,17 +82,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
         phoneNumber = '+82' + phoneNumber.substring(1);
       }
 
-      bool isAvailable =
-          await _userRepository.isPhoneNumberAvailable(phoneNumber);
-      if (!isAvailable) {
-        setState(() {
-          _phoneError = '이미 사용 중인 전화번호입니다';
-        });
-        _formKey.currentState?.validate();
-        return;
-      }
-
-      await _userRepository.verifyPhoneNumber(
+      await _authRepository.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         onVerificationCompleted: _onVerificationCompleted,
         onVerificationFailed: _onVerificationFailed,
@@ -108,9 +99,21 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
 
   void _onVerificationCompleted(PhoneAuthCredential credential) async {
     try {
-      await _userRepository.linkPhoneCredential(credential);
+      final userCredential = await _authRepository.signUpWithPhone(credential);
       _timer?.cancel();
-      await widget.onNext();
+
+      // 새로운 사용자인 경우에만 다음 회원가입 단계로 진행
+      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
+        await widget.onNext();
+      } else {
+        // 기존 사용자는 바로 메인 화면으로 이동
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
+        }
+      }
     } catch (e) {
       setState(() {
         _codeError = '인증에 실패했습니다. 다시 시도해주세요.';
@@ -121,7 +124,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
 
   void _onVerificationFailed(FirebaseAuthException e) {
     setState(() {
-      _phoneError = _userRepository.getPhoneVerificationErrorMessage(e);
+      _phoneError = _authRepository.getPhoneVerificationErrorMessage(e);
     });
     _formKey.currentState?.validate();
   }
@@ -161,12 +164,12 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
         smsCode: _codeController.text,
       );
 
-      await _userRepository.linkPhoneCredential(credential);
+      await _authRepository.signUpWithPhone(credential);
       _timer?.cancel();
       await widget.onNext();
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _codeError = _userRepository.getPhoneVerificationErrorMessage(e);
+        _codeError = _authRepository.getPhoneVerificationErrorMessage(e);
       });
       _formKey.currentState?.validate();
     } catch (e) {
@@ -184,6 +187,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
         title: Text('휴대폰 인증'),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: ResponsiveContainer(
         child: Column(
@@ -206,16 +210,18 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                           validator: (value) => _phoneError,
                           keyboardType: TextInputType.phone,
                         ),
-                        SizedBox(height: 16),
-                        BuildTextFieldWithButton(
-                          context: context,
-                          controller: _codeController,
-                          label: '인증번호 ($_formatTime)',
-                          buttonText: '확인',
-                          onPressed: _verifyCode,
-                          validator: (value) => _codeError,
-                          keyboardType: TextInputType.number,
-                        ),
+                        if (_isCodeSent) ...[
+                          SizedBox(height: 16),
+                          BuildTextFieldWithButton(
+                            context: context,
+                            controller: _codeController,
+                            label: '인증번호 ($_formatTime)',
+                            buttonText: '확인',
+                            onPressed: _verifyCode,
+                            validator: (value) => _codeError,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ]
                       ],
                     ),
                   ),
@@ -234,7 +240,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: _isCodeSent ? widget.onNext : null,
+                onPressed: null,
               ),
             ),
           ],

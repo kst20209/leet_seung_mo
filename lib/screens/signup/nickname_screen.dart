@@ -31,6 +31,7 @@ class _NicknameScreenState extends State<NicknameScreen> {
         title: Text('프로필 설정'),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: ResponsiveContainer(
         child: Column(
