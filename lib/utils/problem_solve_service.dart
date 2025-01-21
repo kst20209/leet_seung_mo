@@ -85,6 +85,36 @@ class ProblemSolveService {
     await batch.commit();
   }
 
+  // 첫 클릭 시 FirstView 저장
+  Future<void> recordFirstView({
+    required String userId,
+    required String problemId,
+  }) async {
+    final docRef =
+        _firestore.collection('userProblemData').doc('${userId}_${problemId}');
+
+    // 트랜잭션으로 처리하여 race condition 방지
+    await _firestore.runTransaction((transaction) async {
+      final doc = await transaction.get(docRef);
+
+      if (!doc.exists || doc.data()?['firstViewedAt'] == null) {
+        // 문서가 없거나 firstViewedAt이 없는 경우에만 기록
+        transaction.set(
+            docRef,
+            {
+              'userId': userId,
+              'problemId': problemId,
+              'firstViewedAt': FieldValue.serverTimestamp(),
+              'isFavorite': false,
+              'isSolved': false,
+              'totalAttempts': 0,
+              'correctAttempts': 0,
+            },
+            SetOptions(merge: true));
+      }
+    });
+  }
+
   // '정답 제출' 클릭 시 호출
   Future<String?> saveAttempt({
     required String userId,

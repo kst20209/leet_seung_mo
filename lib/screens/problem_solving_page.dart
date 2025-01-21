@@ -93,6 +93,12 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
     if (user == null) return;
 
     try {
+      // 첫 조회 기록
+      await _problemSolveService.recordFirstView(
+        userId: user.uid,
+        problemId: widget.problem.id,
+      );
+
       final problemData = await context
           .read<UserDataProvider>()
           .getProblemData(widget.problem.id);
