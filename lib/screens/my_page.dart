@@ -221,7 +221,6 @@ class _MyPageState extends State<MyPage> {
         'title': '포인트 사용내역',
         'icon': Icons.history,
         'onTap': () {
-          print('탭 확인');
           Navigator.push(
             context,
             MaterialPageRoute(
