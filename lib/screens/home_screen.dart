@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SectionTitle(
             title,
             icon: icon,
-            padding: EdgeInsets.fromLTRB(20, 32, 0, 8),
+            padding: EdgeInsets.fromLTRB(20, 24, 0, 8),
           ),
         ),
         FutureBuilder<List<T>>(

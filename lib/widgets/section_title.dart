@@ -27,14 +27,17 @@ class SectionTitle extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 24, // 텍스트 크기와 동일하게 설정
+                size: 18, // 텍스트 크기와 동일하게 설정
                 color: Theme.of(context).colorScheme.secondary, // 테마 색상 사용
               ),
               const SizedBox(width: 6),
               Text(
                 title,
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
               ),
             ],
           ),

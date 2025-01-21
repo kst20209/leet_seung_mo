@@ -133,12 +133,12 @@ class _MyProblemPageState extends State<MyProblemPage> {
           title,
           icon: icon,
           onMorePressed: onMorePressed,
-          padding: const EdgeInsets.fromLTRB(20, 24, 4, 0),
+          padding: const EdgeInsets.fromLTRB(20, 16, 4, 0),
         ),
         if (items.isEmpty)
           Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 60),
+              padding: const EdgeInsets.symmetric(vertical: 80),
               child: Text(emptyMessage),
             ),
           )
