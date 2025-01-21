@@ -134,7 +134,7 @@ class UserDataProvider with ChangeNotifier {
         _cache.remove('problems:favorites');
         break;
     }
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   /// 문제를 해결 완료 상태로 표시합니다.
