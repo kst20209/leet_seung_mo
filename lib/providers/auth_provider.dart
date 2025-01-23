@@ -101,6 +101,19 @@ class AppAuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updatePhoneNumber(PhoneAuthCredential credential) async {
+    try {
+      await _auth.currentUser?.updatePhoneNumber(credential);
+      _error = null;
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      _error = _getErrorMessage(e);
+      notifyListeners();
+      throw _error!;
+    }
+    return null;
+  }
+
   // Sign out
   Future<void> signOut() async {
     try {

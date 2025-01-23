@@ -54,6 +54,7 @@ class BuildTextFieldWithButton extends StatelessWidget {
   final VoidCallback onPressed;
   final FormFieldValidator<String>? validator;
   final String? error;
+  final bool? readOnly;
 
   BuildTextFieldWithButton({
     required this.context,
@@ -64,6 +65,7 @@ class BuildTextFieldWithButton extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.validator,
     this.error,
+    this.readOnly,
   });
 
   @override
@@ -77,6 +79,7 @@ class BuildTextFieldWithButton extends StatelessWidget {
               TextFormField(
                 controller: controller,
                 validator: validator,
+                readOnly: readOnly ?? false,
                 keyboardType: keyboardType,
                 decoration: InputDecoration(
                   labelText: label,

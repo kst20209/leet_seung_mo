@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import './mypage/change_phone_screen.dart';
 import 'mypage/inquiry_page.dart';
 import 'mypage/point_transaction_history_page.dart';
 
@@ -225,6 +226,18 @@ class _MyPageState extends State<MyPage> {
             context,
             MaterialPageRoute(
               builder: (context) => const PointTransactionHistoryPage(),
+            ),
+          );
+        },
+      },
+      {
+        'title': '전화번호 수정', // 새로 추가
+        'icon': Icons.phone,
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ChangePhoneScreen(),
             ),
           );
         },
