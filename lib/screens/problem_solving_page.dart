@@ -1,6 +1,5 @@
 export 'problem_solving_page.dart';
 import 'package:no_screenshot/no_screenshot.dart';
-import 'package:no_screenshot/screenshot_snapshot.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:flutter/material.dart';
