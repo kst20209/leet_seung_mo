@@ -1,13 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_data_provider.dart';
-import '../providers/auth_provider.dart';
-import 'package:uuid/uuid.dart';
 import '../utils/iap/iap_service.dart';
-import '../utils/point_transaction_service.dart';
 
 class PurchasePointPage extends StatefulWidget {
   const PurchasePointPage({Key? key}) : super(key: key);
@@ -33,7 +29,28 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
       _iapService.setContext(context);
       await _iapService.initialize();
     } catch (e) {
-      print("IAP initializer error: ${e}");
+      if (mounted) {
+        // SnackBar 대신 Dialog 사용
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('결제 서비스 초기화 실패'),
+              content: Text('현재 포인트 구매 서비스를 이용할 수 없습니다.\n잠시 후 다시 시도해주세요.'),
+              actions: [
+                TextButton(
+                  child: Text('확인'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Dialog 닫기
+                    Navigator.of(context).pop(); // PurchasePointPage 닫기
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
     }
   }
 
