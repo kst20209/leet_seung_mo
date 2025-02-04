@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
@@ -16,13 +18,14 @@ class PurchasePointPage extends StatefulWidget {
 
 class _PurchasePointPageState extends State<PurchasePointPage> {
   final IAPService _iapService = IAPService();
-  String? _error;
   bool _isProcessing = false;
+  StreamSubscription? _purchaseResultSubscription;
 
   @override
   void initState() {
     super.initState();
     _initializeIAP();
+    _setupPurchaseResultListener();
   }
 
   Future<void> _initializeIAP() async {
@@ -30,10 +33,25 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
       _iapService.setContext(context);
       await _iapService.initialize();
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
+      print("IAP initializer error: ${e}");
     }
+  }
+
+  void _setupPurchaseResultListener() {
+    _purchaseResultSubscription = _iapService.purchaseResultStream.listen(
+      (result) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? ''),
+              backgroundColor: result.success ? Colors.green : Colors.red,
+            ),
+          );
+
+          setState(() => _isProcessing = false);
+        }
+      },
+    );
   }
 
   // 포인트 상품 데이터
@@ -47,23 +65,10 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
       BuildContext context, Map<String, dynamic> product) async {
     if (_isProcessing) return;
 
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final authProvider = context.read<AppAuthProvider>();
-    final userDataProvider = context.read<UserDataProvider>();
-
-    if (authProvider.user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다.')),
-      );
-      return;
-    }
-
     setState(() => _isProcessing = true);
-    final String transactionId = const Uuid().v4(); // 거래 고유 ID 생성
 
     try {
       if (_iapService.isAvailable) {
-        // IAP 가능한 경우 IAP로 처리
         final productId = 'Point${product['points']}';
         final productDetails = _iapService.products.firstWhere(
           (p) => p.id == productId,
@@ -72,30 +77,23 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
 
         await _iapService.buyProduct(productDetails);
       }
-
-      // UI 업데이트를 위해 UserDataProvider 새로고침
-      await userDataProvider.refreshUserData(authProvider.user!.uid);
-
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('포인트 구매가 완료되었습니다.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
     } catch (e) {
+      setState(() => _isProcessing = false);
       if (mounted) {
-        scaffoldMessenger.showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('구매 중 오류가 발생했습니다: $e'),
+            content: Text('구매 초기화 중 오류가 발생했습니다: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } finally {
-      setState(() => _isProcessing = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _purchaseResultSubscription?.cancel();
+    super.dispose();
   }
 
   void _showPurchaseConfirmDialog(

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import '../../models/iap_product.dart';
+import '../../providers/user_data_provider.dart';
 import '../point_transaction_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -29,46 +31,90 @@ class IAPService {
   bool _isAvailable = false;
   List<ProductDetails> _products = [];
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+  StreamController<PurchaseResult> _purchaseResultController =
+      StreamController<PurchaseResult>.broadcast();
+  Stream<PurchaseResult> get purchaseResultStream =>
+      _purchaseResultController.stream;
 
   // userId 가져오기
   String? get _userId => _context.read<AppAuthProvider>().user?.uid;
 
-  // 디버깅을 위한 로그 추가
   Future<void> _handlePurchase(PurchaseDetails purchaseDetails) async {
-    print('Purchase Status: ${purchaseDetails.status}');
-    print('Product ID: ${purchaseDetails.productID}');
+    _debugLog('Handling purchase...');
+    _debugLog('Purchase Status: ${purchaseDetails.status}');
+    _debugLog('Product ID: ${purchaseDetails.productID}');
+
+    if (purchaseDetails.status == PurchaseStatus.canceled) {
+      _debugLog('Purchase was canceled by user');
+      if (purchaseDetails.pendingCompletePurchase) {
+        await _iap.completePurchase(purchaseDetails);
+        _debugLog('Canceled purchase completed');
+      }
+      _purchaseResultController.add(PurchaseResult(
+        success: false,
+        status: 'canceled',
+        message: '결제가 취소되었습니다.',
+      ));
+      return;
+    }
 
     if (purchaseDetails.status == PurchaseStatus.purchased) {
       final userId = _userId;
       if (userId == null) {
-        print('Error: User not logged in');
+        _debugLog('❌ Error: User not logged in');
+        _purchaseResultController.add(PurchaseResult(
+          success: false,
+          status: 'failed',
+          message: '로그인이 필요합니다.',
+        ));
         return;
       }
 
       try {
         final points = _pointMapping[purchaseDetails.productID] ?? 0;
-        print('Processing purchase - Points: $points');
+        _debugLog('💰 Processing purchase - Points: $points');
 
-        await _pointTransactionService.processIAPPurchase(
+        // PointTransactionService를 통한 포인트 처리
+        await _pointTransactionService.processPurchase(
           userId: userId,
           points: points,
+          bonusPoints: 0,
           price: _getPrice(purchaseDetails.productID),
+          productId: purchaseDetails.productID,
           metadata: {
-            'productId': purchaseDetails.productID,
             'transactionId': purchaseDetails.purchaseID ?? '',
             'receipt': purchaseDetails.verificationData.serverVerificationData,
             'platform': 'ios',
+            'type': 'iap_purchase',
           },
         );
 
-        print('Purchase processed successfully');
+        // UI 갱신을 위한 Provider 업데이트
+        if (_context.mounted) {
+          await Provider.of<UserDataProvider>(_context, listen: false)
+              .refreshUserData(userId);
+          _debugLog('✅ User data refreshed');
+        }
 
+        // 구매 완료 처리
         if (purchaseDetails.pendingCompletePurchase) {
           await _iap.completePurchase(purchaseDetails);
-          print('Purchase completed');
+          _debugLog('🎉 Purchase completed');
         }
+        _purchaseResultController.add(PurchaseResult(
+          success: true,
+          status: 'completed',
+          message: '포인트 구매가 완료되었습니다.',
+        ));
       } catch (e) {
-        print('Error processing purchase: $e');
+        _debugLog('❌ Error processing purchase: $e');
+        _debugLog('Error stack trace: ${StackTrace.current}');
+        _purchaseResultController.add(PurchaseResult(
+          success: false,
+          status: 'failed',
+          message: '구매 처리 중 오류가 발생했습니다: $e',
+        ));
+        rethrow;
       }
     }
   }
@@ -102,11 +148,18 @@ class IAPService {
   bool get isAvailable => _isAvailable;
 
   Future<void> initialize() async {
+    _debugLog('Initializing IAP service...');
     _isAvailable = await _iap.isAvailable();
-    if (!_isAvailable) return;
+    _debugLog('IAP available: $_isAvailable');
+
+    if (!_isAvailable) {
+      _debugLog('❌ IAP not available');
+      return;
+    }
 
     await loadProducts();
     _setupPurchaseStream();
+    _debugLog('IAP initialization complete');
   }
 
   Future<void> loadProducts() async {
@@ -134,10 +187,18 @@ class IAPService {
   }
 
   void _setupPurchaseStream() {
+    _debugLog('Setting up purchase stream...');
     _subscription = _iap.purchaseStream.listen(
-      _handlePurchaseUpdate,
-      onError: _handleError,
+      (purchaseDetails) {
+        _debugLog('Purchase update received: ${purchaseDetails.length} items');
+        _handlePurchaseUpdate(purchaseDetails);
+      },
+      onError: (error) {
+        _debugLog('Purchase stream error: $error');
+        _handleError(error);
+      },
     );
+    _debugLog('Purchase stream setup complete');
   }
 
   Future<void> _handlePurchaseUpdate(
@@ -181,5 +242,6 @@ class IAPService {
 
   void dispose() {
     _subscription?.cancel();
+    _purchaseResultController.close();
   }
 }
