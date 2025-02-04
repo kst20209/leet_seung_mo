@@ -84,7 +84,7 @@ class IAPService {
           metadata: {
             'transactionId': purchaseDetails.purchaseID ?? '',
             'receipt': purchaseDetails.verificationData.serverVerificationData,
-            'platform': 'ios',
+            'platform': 'ios', // TODO: ios 대신 Android인 경우에는 다르게
             'type': 'iap_purchase',
           },
         );
