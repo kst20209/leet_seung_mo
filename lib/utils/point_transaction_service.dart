@@ -237,6 +237,25 @@ class PointTransactionService {
     });
   }
 
+  Future<void> processIAPPurchase({
+    required String userId,
+    required int points,
+    required int price,
+    required Map<String, dynamic> metadata,
+  }) async {
+    return processPurchase(
+      userId: userId,
+      points: points,
+      bonusPoints: 0,
+      price: price,
+      productId: metadata['productId'],
+      metadata: {
+        ...metadata,
+        'type': 'iap_purchase',
+      },
+    );
+  }
+
   // 특정 사용자의 트랜잭션 내역 조회
   Future<List<Map<String, dynamic>>> getUserTransactionHistory(
     String userId, {

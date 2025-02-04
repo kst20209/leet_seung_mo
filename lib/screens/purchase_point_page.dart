@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_data_provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:uuid/uuid.dart';
+import '../utils/iap/iap_service.dart';
 import '../utils/point_transaction_service.dart';
 
 class PurchasePointPage extends StatefulWidget {
@@ -14,14 +15,32 @@ class PurchasePointPage extends StatefulWidget {
 }
 
 class _PurchasePointPageState extends State<PurchasePointPage> {
-  final PointTransactionService _purchaseService = PointTransactionService();
+  final IAPService _iapService = IAPService();
+  String? _error;
   bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeIAP();
+  }
+
+  Future<void> _initializeIAP() async {
+    try {
+      _iapService.setContext(context);
+      await _iapService.initialize();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    }
+  }
 
   // 포인트 상품 데이터
   final List<Map<String, dynamic>> pointProducts = const [
-    {'points': 250, 'price': 3000, 'bonus': 0, 'productId': 'point_250'},
-    {'points': 500, 'price': 4500, 'bonus': 0, 'productId': 'point_500'},
-    {'points': 1000, 'price': 9000, 'bonus': 0, 'productId': 'point_1000'},
+    {'points': 250, 'price': 3000, 'bonus': 0, 'productId': 'Point250'},
+    {'points': 500, 'price': 4500, 'bonus': 0, 'productId': 'Point500'},
+    {'points': 1000, 'price': 9000, 'bonus': 0, 'productId': 'Point1000'},
   ];
 
   Future<void> _processPurchase(
@@ -43,25 +62,16 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
     final String transactionId = const Uuid().v4(); // 거래 고유 ID 생성
 
     try {
-      // TODO: 실제 인앱 결제 처리 로직 구현
-      // 임시로 바로 성공으로 처리
+      if (_iapService.isAvailable) {
+        // IAP 가능한 경우 IAP로 처리
+        final productId = 'Point${product['points']}';
+        final productDetails = _iapService.products.firstWhere(
+          (p) => p.id == productId,
+          orElse: () => throw Exception('상품을 찾을 수 없습니다.'),
+        );
 
-      // PointTransactionService를 사용하여 구매 처리
-      await _purchaseService.processPurchase(
-        userId: authProvider.user!.uid,
-        points: product['points'],
-        bonusPoints: product['bonus'],
-        price: product['price'],
-        productId: product['productId'],
-        metadata: {
-          'transactionId': transactionId,
-          'platform': 'ios', // or 'android'
-          // 실제 인앱 결제 시 추가될 정보들:
-          // 'paymentId': payment.id,
-          // 'orderId': payment.orderId,
-          // 'purchaseToken': payment.purchaseToken,
-        },
-      );
+        await _iapService.buyProduct(productDetails);
+      }
 
       // UI 업데이트를 위해 UserDataProvider 새로고침
       await userDataProvider.refreshUserData(authProvider.user!.uid);
