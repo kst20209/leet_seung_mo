@@ -73,9 +73,9 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
 
   // 포인트 상품 데이터
   final List<Map<String, dynamic>> pointProducts = const [
-    {'points': 250, 'price': 3000, 'bonus': 0, 'productId': 'Point250'},
-    {'points': 500, 'price': 4500, 'bonus': 0, 'productId': 'Point500'},
-    {'points': 1000, 'price': 9000, 'bonus': 0, 'productId': 'Point1000'},
+    {'points': 250, 'price': 3000, 'bonus': 0, 'productId': 'point_250'},
+    {'points': 500, 'price': 4500, 'bonus': 0, 'productId': 'point_500'},
+    {'points': 1000, 'price': 9000, 'bonus': 0, 'productId': 'point_1000'},
   ];
 
   Future<void> _processPurchase(

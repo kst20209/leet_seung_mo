@@ -121,16 +121,16 @@ class IAPService {
 
   // 상품 ID 정의
   static const Set<String> _productIds = {
-    'Point250',
-    'Point500',
-    'Point1000',
+    'point_250',
+    'point_500',
+    'point_1000',
   };
 
   // 가격 매핑 추가
   static const Map<String, int> _priceMapping = {
-    'Point250': 3000,
-    'Point500': 4500,
-    'Point1000': 9000,
+    'point_250': 3000,
+    'point_500': 4500,
+    'point_1000': 9000,
   };
 
   int _getPrice(String productId) {
@@ -139,9 +139,9 @@ class IAPService {
 
   // 포인트 매핑
   static const Map<String, int> _pointMapping = {
-    'Point250': 250,
-    'Point500': 500,
-    'Point1000': 1000,
+    'point_250': 250,
+    'point_500': 500,
+    'point_1000': 1000,
   };
 
   List<ProductDetails> get products => _products;
