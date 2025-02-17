@@ -86,7 +86,7 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
 
     try {
       if (_iapService.isAvailable) {
-        final productId = 'Point${product['points']}';
+        final productId = product['productId'];
         final productDetails = _iapService.products.firstWhere(
           (p) => p.id == productId,
           orElse: () => throw Exception('상품을 찾을 수 없습니다.'),

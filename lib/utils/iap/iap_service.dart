@@ -231,7 +231,13 @@ class IAPService {
   }
 
   Future<bool> buyProduct(ProductDetails product) async {
-    _debugLog('Starting purchase for product: ${product.id}');
+    _debugLog('🛍️Starting purchase for product: ${product.id}');
+
+    // 디버깅을 위한 로그 추가
+    _debugLog('Available products:');
+    for (var p in _products) {
+      _debugLog('- ${p.id}: ${p.title}');
+    }
 
     if (!_isAvailable) {
       _debugLog('❌ Store not available');
@@ -242,8 +248,9 @@ class IAPService {
       final PurchaseParam purchaseParam = PurchaseParam(
         productDetails: product,
       );
-      _debugLog('Initiating purchase with params: $purchaseParam');
-      _debugLog('Purchase params: ${purchaseParam.toString()}');
+      _debugLog('🛍️Initiating purchase with params: $purchaseParam');
+      _debugLog('🛍️Purchase params: ${purchaseParam.toString()}');
+      _debugLog('🛍️Purchase parameter created for product: ${product.id}');
 
       final bool success = await _iap.buyConsumable(
         purchaseParam: purchaseParam,
@@ -254,6 +261,7 @@ class IAPService {
       return success;
     } catch (e) {
       _debugLog('❌ Error making purchase: $e');
+      _debugLog('🛍️Error stack trace: ${StackTrace.current}');
       return false;
     }
   }
