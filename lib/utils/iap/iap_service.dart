@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../models/iap_product.dart';
@@ -74,6 +75,10 @@ class IAPService {
         final points = _pointMapping[purchaseDetails.productID] ?? 0;
         _debugLog('💰 Processing purchase - Points: $points');
 
+        if (purchaseDetails.pendingCompletePurchase) {
+          await _iap.completePurchase(purchaseDetails);
+        }
+
         // PointTransactionService를 통한 포인트 처리
         await _pointTransactionService.processPurchase(
           userId: userId,
@@ -84,7 +89,7 @@ class IAPService {
           metadata: {
             'transactionId': purchaseDetails.purchaseID ?? '',
             'receipt': purchaseDetails.verificationData.serverVerificationData,
-            'platform': 'ios', // TODO: ios 대신 Android인 경우에는 다르게
+            'platform': Platform.isAndroid ? 'android' : 'ios',
             'type': 'iap_purchase',
           },
         );
@@ -209,7 +214,19 @@ class IAPService {
   }
 
   void _handleError(IAPError error) {
-    print('Error: ${error.message}');
+    String errorMessage = '결제 중 오류가 발생했습니다';
+
+    if (error is Exception) {
+      if (error.toString().contains('BillingResponse')) {
+        errorMessage = '결제가 취소되었습니다';
+      }
+    }
+
+    _purchaseResultController.add(PurchaseResult(
+      success: false,
+      status: 'failed',
+      message: errorMessage,
+    ));
     // 에러 처리 로직 추가 필요
   }
 
@@ -226,6 +243,7 @@ class IAPService {
         productDetails: product,
       );
       _debugLog('Initiating purchase with params: $purchaseParam');
+      _debugLog('Purchase params: ${purchaseParam.toString()}');
 
       final bool success = await _iap.buyConsumable(
         purchaseParam: purchaseParam,
