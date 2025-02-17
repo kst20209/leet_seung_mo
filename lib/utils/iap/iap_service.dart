@@ -7,6 +7,7 @@ import '../../providers/user_data_provider.dart';
 import '../point_transaction_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import 'receipt_verification_service.dart';
 
 class IAPService {
   static final IAPService _instance = IAPService._internal();
@@ -72,6 +73,17 @@ class IAPService {
       }
 
       try {
+        final verified =
+            await ReceiptVerificationService().verifyPurchase(purchaseDetails);
+
+        if (!verified) {
+          _purchaseResultController.add(PurchaseResult(
+            success: false,
+            status: 'failed',
+            message: '구매 검증에 실패했습니다.',
+          ));
+          return;
+        }
         final points = _pointMapping[purchaseDetails.productID] ?? 0;
         _debugLog('💰 Processing purchase - Points: $points');
 
