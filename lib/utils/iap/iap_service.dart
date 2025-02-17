@@ -73,17 +73,6 @@ class IAPService {
       }
 
       try {
-        final verified =
-            await ReceiptVerificationService().verifyPurchase(purchaseDetails);
-
-        if (!verified) {
-          _purchaseResultController.add(PurchaseResult(
-            success: false,
-            status: 'failed',
-            message: '구매 검증에 실패했습니다.',
-          ));
-          return;
-        }
         final points = _pointMapping[purchaseDetails.productID] ?? 0;
         _debugLog('💰 Processing purchase - Points: $points');
 
@@ -106,6 +95,22 @@ class IAPService {
           },
         );
 
+        _debugLog('Details: ${purchaseDetails}');
+        _debugLog(
+            'Details: ${purchaseDetails.verificationData.serverVerificationData}');
+
+        final verified =
+            await ReceiptVerificationService().verifyPurchase(purchaseDetails);
+
+        if (!verified) {
+          _purchaseResultController.add(PurchaseResult(
+            success: false,
+            status: 'failed',
+            message: '구매가 완료되었으나, 영수증 검증에 실패했습니다.',
+          ));
+          return;
+        }
+
         // UI 갱신을 위한 Provider 업데이트
         if (_context.mounted) {
           await Provider.of<UserDataProvider>(_context, listen: false)
@@ -121,7 +126,7 @@ class IAPService {
         _purchaseResultController.add(PurchaseResult(
           success: true,
           status: 'completed',
-          message: '포인트 구매가 완료되었습니다.',
+          message: '포인트 구매 및 영수증 검증이 완료되었습니다.',
         ));
       } catch (e) {
         _debugLog('❌ Error processing purchase: $e');
