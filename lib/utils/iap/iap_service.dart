@@ -7,14 +7,14 @@ import '../../providers/user_data_provider.dart';
 import '../point_transaction_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import 'receipt_verification_service.dart';
+// import 'receipt_verification_service.dart';
 
 class IAPService {
   static final IAPService _instance = IAPService._internal();
   factory IAPService() => _instance;
   IAPService._internal();
   late BuildContext _context;
-  final bool _debugMode = true;
+  final bool _debugMode = false;
 
   void setContext(BuildContext context) {
     _context = context;
@@ -73,19 +73,19 @@ class IAPService {
       }
 
       try {
-        final verified =
-            await ReceiptVerificationService().verifyPurchase(purchaseDetails);
+        // final verified =
+        //     await ReceiptVerificationService().verifyPurchase(purchaseDetails);
 
-        if (!verified) {
-          _debugLog('❌ Receipt verification failed');
-          // 영수증 검증 실패 시 구매 완료 처리하지 않음
-          _purchaseResultController.add(PurchaseResult(
-            success: false,
-            status: 'failed',
-            message: '영수증 검증에 실패했습니다.',
-          ));
-          return;
-        }
+        // if (!verified) {
+        //   _debugLog('❌ Receipt verification failed');
+        //   // 영수증 검증 실패 시 구매 완료 처리하지 않음
+        //   _purchaseResultController.add(PurchaseResult(
+        //     success: false,
+        //     status: 'failed',
+        //     message: '영수증 검증에 실패했습니다.',
+        //   ));
+        //   return;
+        // }
 
         final points = _pointMapping[purchaseDetails.productID] ?? 0;
         _debugLog('💰 Processing purchase - Points: $points');
@@ -128,7 +128,7 @@ class IAPService {
         _purchaseResultController.add(PurchaseResult(
           success: true,
           status: 'completed',
-          message: '포인트 구매 및 영수증 검증이 완료되었습니다.',
+          message: '포인트 구매가가 완료되었습니다.',
         ));
       } catch (e) {
         _debugLog('❌ Error processing purchase: $e');

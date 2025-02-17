@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const { verifyIosReceipt } = require('./iap/ios-verification');
 const { verifyAndroidPurchase } = require('./iap/android-verification');
 
-exports.verifyPurchase = functions.https.onCall(async (data) => {
+exports.verifyPurchase = functions.https.onCall(async (data, context) => {
   const { platform, receiptData, productId, signature } = data;
 
   console.log('Starting purchase verification:', {
