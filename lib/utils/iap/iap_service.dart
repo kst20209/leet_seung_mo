@@ -73,6 +73,20 @@ class IAPService {
       }
 
       try {
+        final verified =
+            await ReceiptVerificationService().verifyPurchase(purchaseDetails);
+
+        if (!verified) {
+          _debugLog('❌ Receipt verification failed');
+          // 영수증 검증 실패 시 구매 완료 처리하지 않음
+          _purchaseResultController.add(PurchaseResult(
+            success: false,
+            status: 'failed',
+            message: '영수증 검증에 실패했습니다.',
+          ));
+          return;
+        }
+
         final points = _pointMapping[purchaseDetails.productID] ?? 0;
         _debugLog('💰 Processing purchase - Points: $points');
 
@@ -98,18 +112,6 @@ class IAPService {
         _debugLog('Details: ${purchaseDetails}');
         _debugLog(
             'Details: ${purchaseDetails.verificationData.serverVerificationData}');
-
-        final verified =
-            await ReceiptVerificationService().verifyPurchase(purchaseDetails);
-
-        if (!verified) {
-          _purchaseResultController.add(PurchaseResult(
-            success: false,
-            status: 'failed',
-            message: '구매가 완료되었으나, 영수증 검증에 실패했습니다.',
-          ));
-          return;
-        }
 
         // UI 갱신을 위한 Provider 업데이트
         if (_context.mounted) {

@@ -2,15 +2,7 @@ const functions = require('firebase-functions');
 const { verifyIosReceipt } = require('./iap/ios-verification');
 const { verifyAndroidPurchase } = require('./iap/android-verification');
 
-exports.verifyPurchase = functions.https.onCall(async (data, context) => {
-  // 인증 확인
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      '인증이 필요합니다.'
-    );
-  }
-
+exports.verifyPurchase = functions.https.onCall(async (data) => {
   const { platform, receiptData, productId, signature } = data;
 
   console.log('Starting purchase verification:', {
