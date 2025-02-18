@@ -14,7 +14,7 @@ class IAPService {
   factory IAPService() => _instance;
   IAPService._internal();
   late BuildContext _context;
-  final bool _debugMode = false;
+  final bool _debugMode = true;
 
   void setContext(BuildContext context) {
     _context = context;
@@ -42,10 +42,6 @@ class IAPService {
   String? get _userId => _context.read<AppAuthProvider>().user?.uid;
 
   Future<void> _handlePurchase(PurchaseDetails purchaseDetails) async {
-    _debugLog('Handling purchase...');
-    _debugLog('Purchase Status: ${purchaseDetails.status}');
-    _debugLog('Product ID: ${purchaseDetails.productID}');
-
     if (purchaseDetails.status == PurchaseStatus.canceled) {
       _debugLog('Purchase was canceled by user');
       if (purchaseDetails.pendingCompletePurchase) {
@@ -128,7 +124,7 @@ class IAPService {
         _purchaseResultController.add(PurchaseResult(
           success: true,
           status: 'completed',
-          message: '포인트 구매가가 완료되었습니다.',
+          message: '포인트 구매가 완료되었습니다.',
         ));
       } catch (e) {
         _debugLog('❌ Error processing purchase: $e');
@@ -138,6 +134,7 @@ class IAPService {
           status: 'failed',
           message: '구매 처리 중 오류가 발생했습니다: $e',
         ));
+        await _iap.completePurchase(purchaseDetails);
         rethrow;
       }
     }
@@ -176,9 +173,30 @@ class IAPService {
     _isAvailable = await _iap.isAvailable();
     _debugLog('IAP available: $_isAvailable');
 
+    _subscription?.cancel();
+    _subscription = null;
+
     if (!_isAvailable) {
       _debugLog('❌ IAP not available');
       return;
+    }
+
+    try {
+      final pending = await _iap.purchaseStream.first.timeout(
+        Duration(seconds: 1),
+        onTimeout: () => <PurchaseDetails>[], // 타임아웃 시 빈 리스트 반환
+      );
+      _debugLog('❌ duration past, pending: ${pending}');
+
+      for (var purchase in pending) {
+        _debugLog('❌ no loop error');
+        if (purchase.pendingCompletePurchase) {
+          await _iap.completePurchase(purchase);
+        }
+      }
+    } catch (e) {
+      _debugLog('Warning: Pending purchase check failed: $e');
+      // 에러가 발생해도 계속 진행
     }
 
     await loadProducts();
@@ -287,6 +305,7 @@ class IAPService {
 
   void dispose() {
     _subscription?.cancel();
+    _subscription = null;
     _purchaseResultController.close();
   }
 }
