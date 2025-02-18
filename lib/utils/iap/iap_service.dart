@@ -14,7 +14,7 @@ class IAPService {
   factory IAPService() => _instance;
   IAPService._internal();
   late BuildContext _context;
-  final bool _debugMode = true;
+  final bool _debugMode = false;
 
   void setContext(BuildContext context) {
     _context = context;
