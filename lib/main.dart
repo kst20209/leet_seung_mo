@@ -144,7 +144,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '리승모: 리트 승리의 모든 것',
+      title: '리트오름: 리트 성적 오름의 지름길',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: const MaterialColor(0xFFAF8F6F, {
           50: Color(0xFFF8F4E1),
