@@ -22,7 +22,7 @@ class LandingScreen extends StatelessWidget {
                 Column(
                   children: [
                     Text(
-                      '리승모',
+                      '리트오름',
                       style: Theme.of(context).textTheme.displayLarge?.copyWith(
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
@@ -32,7 +32,7 @@ class LandingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '리트 승리의 모든 것',
+                      '리트 성적 오름의 지름길!',
                       style:
                           Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 color: Theme.of(context)
