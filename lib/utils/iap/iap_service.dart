@@ -128,7 +128,7 @@ class IAPService {
         _purchaseResultController.add(PurchaseResult(
           success: true,
           status: 'completed',
-          message: '포인트 구매가가 완료되었습니다.',
+          message: '포인트 구매가 완료되었습니다.',
         ));
       } catch (e) {
         _debugLog('❌ Error processing purchase: $e');
