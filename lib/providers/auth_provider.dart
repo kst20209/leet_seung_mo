@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../utils/auth_repository.dart';
+import '../utils/firebase_service.dart';
+
 enum AuthStatus {
   uninitialized,
   authenticated,
@@ -9,6 +12,7 @@ enum AuthStatus {
 
 class AppAuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthRepository _authRepository = AuthRepository(FirebaseService());
 
   User? _user;
   AuthStatus _status = AuthStatus.uninitialized;
@@ -34,6 +38,27 @@ class AppAuthProvider with ChangeNotifier {
     });
 
     notifyListeners();
+  }
+
+  Future<bool> signInWithEmail(String email, String password) async {
+    try {
+      final userCredential =
+          await _authRepository.signInWithEmail(email, password);
+      _user = userCredential.user;
+      _status = AuthStatus.authenticated;
+      _error = null;
+      notifyListeners();
+
+      if (_user != null && _onLoginSuccess != null) {
+        _onLoginSuccess!(_user!);
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return false;
+    }
   }
 
   // Phone verification methods

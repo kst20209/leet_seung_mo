@@ -7,6 +7,17 @@ class AuthRepository {
 
   AuthRepository(this._firebaseService);
 
+  Future<UserCredential> signInWithEmail(String email, String password) async {
+    try {
+      return await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw Exception('${e.message}');
+    }
+  }
+
   Future<UserCredential> signUpWithPhone(PhoneAuthCredential credential) async {
     try {
       final userCredential =
