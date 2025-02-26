@@ -4,6 +4,7 @@ import 'package:leet_seung_mo/main.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'signup/login_with_email_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -151,6 +152,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(_codeSent ? '로그인' : '인증번호 받기'),
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LoginWithEmailScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        '이메일로 로그인하기',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w500,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
                     ),
                   ),
                 ],

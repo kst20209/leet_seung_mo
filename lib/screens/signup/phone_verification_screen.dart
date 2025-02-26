@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/gestures.dart';
 import '../../main.dart';
 import '../../widgets/build_text_field.dart';
 import '../../utils/firebase_service.dart';
@@ -29,6 +31,10 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   String? _verificationId;
   Timer? _timer;
   int _timeLeft = 60; // 1분으로 유지
+
+  // 약관 및 개인정보처리방침 URL
+  final String _policyUrl = 'https://leetoreum.com/policy';
+  final String _privacyUrl = 'https://leetoreum.com/privacy';
 
   @override
   void dispose() {
@@ -61,6 +67,16 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
 
   String get _formatTime {
     return '${(_timeLeft ~/ 60).toString().padLeft(2, '0')}:${(_timeLeft % 60).toString().padLeft(2, '0')}';
+  }
+
+  // URL 열기 함수
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('URL을 열 수 없습니다')),
+      );
+    }
   }
 
   Future<void> _sendVerificationCode() async {
@@ -221,27 +237,72 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                             validator: (value) => _codeError,
                             keyboardType: TextInputType.number,
                           ),
-                        ]
+                        ],
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24.0),
-              child: ElevatedButton(
-                child: Text('다음', style: TextStyle(fontSize: 18)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+            Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+                  child: ElevatedButton(
+                    child: Text('다음', style: TextStyle(fontSize: 18)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: null,
                   ),
                 ),
-                onPressed: null,
-              ),
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '다음 버튼을 누르면 ',
+                      ),
+                      TextSpan(
+                        text: '이용약관',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => _launchUrl(_policyUrl),
+                      ),
+                      TextSpan(
+                        text: ' 및 ',
+                      ),
+                      TextSpan(
+                        text: '개인정보처리방침',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => _launchUrl(_privacyUrl),
+                      ),
+                      TextSpan(
+                        text: '에 동의하는 것으로 간주합니다.',
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 30),
+              ],
             ),
           ],
         ),
