@@ -42,6 +42,7 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
 
   Future<void> _fetchProblemSets() async {
     final problemSets = await _dataManager.getProblemSets();
+    if (!mounted) return;
     final userDataProvider = context.read<UserDataProvider>();
     final purchasedSets =
         userDataProvider.userData?['purchasedProblemSets'] as List<dynamic>? ??
@@ -58,6 +59,8 @@ class _ProblemShopPageState extends State<ProblemShopPage> {
 
       return categoryMatch && subCategoryMatch && fieldMatch;
     }).toList();
+
+    if (!mounted) return;
 
     // 정렬 로직 적용
     filteredSets = _sortService.sortProblemSets(
