@@ -154,6 +154,24 @@ class AppAuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> deleteAccount() async {
+    try {
+      // AuthRepository 생성 및 deleteAccount 메서드 호출
+      final authRepository = AuthRepository(FirebaseService());
+      await authRepository.deleteAccount();
+
+      // 성공 후 사용자 상태 업데이트
+      _user = null;
+      _status = AuthStatus.unauthenticated;
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      throw _error!;
+    }
+  }
+
   Function(User)? _onLoginSuccess;
 
   void setLoginSuccessCallback(Function(User) callback) {

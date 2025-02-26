@@ -5,8 +5,10 @@ import '../providers/auth_provider.dart';
 import './mypage/change_phone_screen.dart';
 import 'mypage/inquiry_page.dart';
 import 'mypage/point_transaction_history_page.dart';
+import './mypage/delete_account_verification_screen.dart';
 
 import '../providers/user_data_provider.dart';
+import '../utils/url_service.dart';
 import 'purchase_point_page.dart';
 
 class MyPage extends StatefulWidget {
@@ -35,6 +37,121 @@ class _MyPageState extends State<MyPage> {
             content: Text('로그아웃 중 오류가 발생했습니다: $e'),
             backgroundColor: Colors.red,
           ),
+        );
+      }
+    }
+  }
+
+  // onTap에 들어갈 함수
+  void _showDeleteAccountDialog(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeleteAccountVerificationScreen(
+          onVerificationSuccess: () {
+            _confirmDeleteAccount(context);
+          },
+        ),
+      ),
+    );
+  }
+
+// 삭제 확인 대화상자
+  void _confirmDeleteAccount(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('계정 삭제'),
+          content: Text(
+            '정말로 계정을 삭제하시겠습니까?\n\n'
+            '계정을 삭제하면 다음과 같은 데이터가 영구적으로 삭제됩니다:\n'
+            '- 개인 정보 및 설정\n'
+            '- 구매한 포인트\n\n'
+            '이 작업은 되돌릴 수 없습니다.',
+          ),
+          actions: [
+            TextButton(
+              child: Text('취소'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text(
+                '계정 삭제',
+                style: TextStyle(color: Colors.red),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _executeAccountDeletion(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// 계정 삭제 실행
+  Future<void> _executeAccountDeletion(BuildContext context) async {
+    try {
+      // 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('계정을 삭제 중입니다...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      // AppAuthProvider를 통해 deleteAccount 호출
+      final appAuthProvider = context.read<AppAuthProvider>();
+      await appAuthProvider.deleteAccount();
+
+      // 로딩 대화상자 닫기
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        // 삭제 완료 알림 후 로그인 화면으로 이동
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('계정 삭제 완료'),
+              content: Text('계정이 성공적으로 삭제되었습니다.'),
+              actions: [
+                TextButton(
+                  child: Text('확인'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/',
+                      (route) => false,
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      // 로딩 대화상자 닫기
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        // 오류 메시지 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다: $e')),
         );
       }
     }
@@ -254,14 +371,30 @@ class _MyPageState extends State<MyPage> {
           );
         },
       },
-      {'title': '회사 정보', 'icon': Icons.info},
-      {'title': '개인정보처리방침', 'icon': Icons.security},
-      {'title': '이용약관', 'icon': Icons.description},
-      {'title': '버전 정보', 'icon': Icons.new_releases},
+      {
+        'title': '개인정보처리방침',
+        'icon': Icons.security,
+        'onTap': () {
+          UrlService.launchURL(UrlService.privacyPolicyUrl);
+        },
+      },
+      {
+        'title': '이용약관',
+        'icon': Icons.description,
+        'onTap': () {
+          UrlService.launchURL(UrlService.policyOfServiceUrl);
+        },
+      },
       {
         'title': '로그아웃',
         'icon': Icons.logout,
         'onTap': () => _handleLogout(context),
+      },
+      {
+        'title': '계정 삭제',
+        'icon': Icons.delete_forever,
+        'onTap': () => _showDeleteAccountDialog(context),
+        'color': const Color.fromARGB(255, 107, 7, 0),
       },
     ];
 

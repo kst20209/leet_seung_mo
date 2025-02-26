@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthRepository {
   final FirebaseService _firebaseService;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   AuthRepository(this._firebaseService);
 
@@ -47,6 +48,118 @@ class AuthRepository {
 
   Future<void> signOut() async {
     await _firebaseService.signOut();
+  }
+
+  // auth_repository.dart에 추가할 메서드
+
+// 계정 삭제 함수
+  Future<void> deleteAccount() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('로그인된 사용자가 없습니다');
+      }
+
+      final userId = user.uid;
+
+      // 1. users 컬렉션에서 사용자 문서 삭제
+      await _firebaseService.deleteDocument('users', userId);
+
+      // 2. 문의 내역 익명화 처리
+      await _anonymizeInquiries(userId);
+
+      // 3. 포인트 트랜잭션 데이터 익명화
+      await _anonymizePointTransactions(userId);
+
+      // 4. 문제 풀이 데이터 익명화
+      await _anonymizeProblemData(userId);
+
+      // 5. Firebase Authentication 계정 삭제
+      await user.delete();
+    } catch (e) {
+      // 재인증이 필요한 경우 확인
+      if (e is FirebaseAuthException && e.code == 'requires-recent-login') {
+        throw Exception('계정 삭제를 위해 재로그인이 필요합니다');
+      }
+      rethrow;
+    }
+  }
+
+// 사용자의 문의 내역을 익명화 처리
+  Future<void> _anonymizeInquiries(String userId) async {
+    final querySnapshot = await _firestore
+        .collection('inquiries')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    final batch = _firestore.batch();
+
+    for (var doc in querySnapshot.docs) {
+      batch.update(doc.reference, {
+        'userId': 'deleted_user',
+        'userNickname': '탈퇴한 사용자',
+        'isAnonymized': true,
+      });
+    }
+
+    if (querySnapshot.docs.isNotEmpty) {
+      await batch.commit();
+    }
+  }
+
+// 포인트 트랜잭션 데이터 익명화
+  Future<void> _anonymizePointTransactions(String userId) async {
+    final querySnapshot = await _firestore
+        .collection('pointTransactions')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    final batch = _firestore.batch();
+
+    for (var doc in querySnapshot.docs) {
+      batch.update(doc.reference, {
+        'userId': 'deleted_user',
+        'isAnonymized': true,
+      });
+    }
+
+    if (querySnapshot.docs.isNotEmpty) {
+      await batch.commit();
+    }
+  }
+
+// 문제 풀이 데이터 익명화 (userProblemData 컬렉션)
+  Future<void> _anonymizeProblemData(String userId) async {
+    final querySnapshot = await _firestore
+        .collection('userProblemData')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    final batch = _firestore.batch();
+
+    for (var doc in querySnapshot.docs) {
+      batch.update(doc.reference, {
+        'userId': 'deleted_user',
+        'isAnonymized': true,
+      });
+    }
+
+    // drawingAttempts 컬렉션 익명화
+    final attemptsSnapshot = await _firestore
+        .collection('drawingAttempts')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    for (var doc in attemptsSnapshot.docs) {
+      batch.update(doc.reference, {
+        'userId': 'deleted_user',
+        'isAnonymized': true,
+      });
+    }
+
+    if (querySnapshot.docs.isNotEmpty || attemptsSnapshot.docs.isNotEmpty) {
+      await batch.commit();
+    }
   }
 
   Future<void> verifyPhoneNumber({
