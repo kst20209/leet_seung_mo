@@ -126,6 +126,27 @@ class AppAuthProvider with ChangeNotifier {
     }
   }
 
+  // 휴대폰 번호 추가
+  Future<bool> linkPhoneNumber(PhoneAuthCredential credential) async {
+    try {
+      if (_user == null) {
+        _error = "로그인이 필요합니다";
+        notifyListeners();
+        return false;
+      }
+
+      final authResult = await _user!.linkWithCredential(credential);
+      _user = authResult.user;
+      _error = null;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _error = _getErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> updatePhoneNumber(PhoneAuthCredential credential) async {
     try {
       await _auth.currentUser?.updatePhoneNumber(credential);

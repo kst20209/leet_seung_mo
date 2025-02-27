@@ -3,6 +3,7 @@ import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import './mypage/change_phone_screen.dart';
+import 'mypage/add_phone_screen.dart';
 import 'mypage/inquiry_page.dart';
 import 'mypage/point_transaction_history_page.dart';
 import './mypage/delete_account_verification_screen.dart';
@@ -129,7 +130,7 @@ class _MyPageState extends State<MyPage> {
       try {
         navigatorContext.pop();
       } catch (navError) {
-        print('ㅁㅁㅁ Navigator 오류(오류 경로): $navError');
+        print('Navigator 오류(오류 경로): $navError');
       }
 
       // 에러 메시지는 SnackBar로 표시 (다이얼로그 대신)
@@ -316,6 +317,10 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildSettingsList(BuildContext context) {
+    final user = context.read<AppAuthProvider>().user;
+    final bool hasPhoneNumber =
+        user?.phoneNumber != null && user!.phoneNumber!.isNotEmpty;
+
     List<Map<String, dynamic>> settings = [
       {
         'title': '포인트 사용내역',
@@ -330,13 +335,15 @@ class _MyPageState extends State<MyPage> {
         },
       },
       {
-        'title': '전화번호 수정', // 새로 추가
+        'title': hasPhoneNumber ? '전화번호 수정' : '휴대전화 추가',
         'icon': Icons.phone,
         'onTap': () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const ChangePhoneScreen(),
+              builder: (context) => hasPhoneNumber
+                  ? const ChangePhoneScreen()
+                  : const AddPhoneScreen(),
             ),
           );
         },
@@ -373,10 +380,9 @@ class _MyPageState extends State<MyPage> {
         'onTap': () => _handleLogout(context),
       },
       {
-        'title': '계정 삭제',
+        'title': '계정 탈퇴',
         'icon': Icons.delete_forever,
         'onTap': () => _showDeleteAccountDialog(context),
-        'color': const Color.fromARGB(255, 107, 7, 0),
       },
     ];
 
