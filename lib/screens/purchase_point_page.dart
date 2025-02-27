@@ -179,167 +179,178 @@ class _PurchasePointPageState extends State<PurchasePointPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('포인트 충전'),
-        elevation: 0,
-      ),
-      body: Consumer<UserDataProvider>(
-        builder: (context, userDataProvider, child) {
-          return Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '현재 보유 포인트',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+    return PopScope(
+      canPop: !_isProcessing, // 처리 중일 때 뒤로가기 방지
+      onPopInvokedWithResult: (didPop, Object? result) {
+        if (!didPop && _isProcessing) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('구매 처리 중입니다. 잠시 기다려 주세요.')),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('포인트 충전'),
+          elevation: 0,
+        ),
+        body: Consumer<UserDataProvider>(
+          builder: (context, userDataProvider, child) {
+            return Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
                       ),
-                    ),
-                    Text(
-                      '${userDataProvider.points}P',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFAF8F6F),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '현재 보유 포인트',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
+                      Text(
+                        '${userDataProvider.points}P',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFAF8F6F),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              if (_isProcessing) const LinearProgressIndicator(),
-              Expanded(
-                child: ResponsiveContainer(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    itemCount: pointProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = pointProducts[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Card(
-                          elevation: 3,
-                          shadowColor: Colors.black26,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: InkWell(
-                            onTap: _isProcessing
-                                ? null
-                                : () => _showPurchaseConfirmDialog(
-                                    context, product),
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.all(24),
-                              child: Row(
-                                children: [
-                                  // 왼쪽 포인트 표시 영역
-                                  Container(
-                                    width: 100,
-                                    height: 100,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFAF4EF),
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.stars_rounded,
-                                          color: Color(0xFFAF8F6F),
-                                          size: 32,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          '${product['points']}P',
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
+                if (_isProcessing) const LinearProgressIndicator(),
+                Expanded(
+                  child: ResponsiveContainer(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      itemCount: pointProducts.length,
+                      itemBuilder: (context, index) {
+                        final product = pointProducts[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Card(
+                            elevation: 3,
+                            shadowColor: Colors.black26,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: InkWell(
+                              onTap: _isProcessing
+                                  ? null
+                                  : () => _showPurchaseConfirmDialog(
+                                      context, product),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(24),
+                                child: Row(
+                                  children: [
+                                    // 왼쪽 포인트 표시 영역
+                                    Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFAF4EF),
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.stars_rounded,
                                             color: Color(0xFFAF8F6F),
+                                            size: 32,
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  // 오른쪽 정보 영역
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${product['price'].toString().replaceAllMapped(
-                                                RegExp(
-                                                    r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                                                (Match m) => '${m[1]},',
-                                              )}원',
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        if (product['bonus'] > 0) ...[
                                           const SizedBox(height: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green.shade50,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              '+${product['bonus']}P 보너스',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.green.shade700,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                          Text(
+                                            '${product['points']}P',
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFFAF8F6F),
                                             ),
                                           ),
                                         ],
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                  const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: Colors.black26,
-                                    size: 20,
-                                  ),
-                                ],
+                                    const SizedBox(width: 20),
+                                    // 오른쪽 정보 영역
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${product['price'].toString().replaceAllMapped(
+                                                  RegExp(
+                                                      r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                                                  (Match m) => '${m[1]},',
+                                                )}원',
+                                            style: const TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          if (product['bonus'] > 0) ...[
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
+                                                '+${product['bonus']}P 보너스',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.green.shade700,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      color: Colors.black26,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
