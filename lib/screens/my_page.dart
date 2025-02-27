@@ -93,6 +93,9 @@ class _MyPageState extends State<MyPage> {
 
 // 계정 삭제 실행
   Future<void> _executeAccountDeletion(BuildContext context) async {
+    // 컨텍스트 참조를 미리 저장
+    final navigatorContext = Navigator.of(context);
+
     try {
       // 로딩 표시
       showDialog(
@@ -116,43 +119,47 @@ class _MyPageState extends State<MyPage> {
       final appAuthProvider = context.read<AppAuthProvider>();
       await appAuthProvider.deleteAccount();
 
-      // 로딩 대화상자 닫기
-      if (mounted) {
-        Navigator.of(context).pop();
+      print('ㅁㅁㅁ 계정 삭제 완료');
 
-        // 삭제 완료 알림 후 로그인 화면으로 이동
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('계정 삭제 완료'),
-              content: Text('계정이 성공적으로 삭제되었습니다.'),
-              actions: [
-                TextButton(
-                  child: Text('확인'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/',
-                      (route) => false,
-                    );
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
+      // 저장해둔 컨텍스트 사용
+      navigatorContext.pop();
+
+      // 새로운 컨텍스트에서 다이얼로그 표시 시도
+      navigatorContext.pushNamedAndRemoveUntil('/', (route) => false);
     } catch (e) {
-      // 로딩 대화상자 닫기
-      if (mounted) {
-        Navigator.of(context).pop();
+      print('ㅁㅁㅁ 계정 삭제 오류: $e');
 
-        // 오류 메시지 표시
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다: $e')),
-        );
+      // 오류 발생 시 처리
+      if (mounted) {
+        // 로딩 다이얼로그 닫기 시도
+        try {
+          Navigator.of(context).pop();
+        } catch (navError) {
+          print('ㅁㅁㅁ Navigator 오류(오류 경로): $navError');
+        }
+
+        // 오류 다이얼로그 표시
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('계정 삭제 실패'),
+                  content: Text('계정 삭제 중 오류가 발생했습니다:\n$e'),
+                  actions: [
+                    TextButton(
+                      child: Text('확인'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          });
+        }
       }
     }
   }

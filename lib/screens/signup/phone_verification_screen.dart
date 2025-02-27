@@ -270,7 +270,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     ),
                     children: [
                       TextSpan(
-                        text: '다음 버튼을 누르면 ',
+                        text: '휴대폰 인증과 함께 ',
                       ),
                       TextSpan(
                         text: '이용약관',

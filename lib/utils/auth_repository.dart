@@ -50,8 +50,6 @@ class AuthRepository {
     await _firebaseService.signOut();
   }
 
-  // auth_repository.dart에 추가할 메서드
-
 // 계정 삭제 함수
   Future<void> deleteAccount() async {
     try {
@@ -64,18 +62,17 @@ class AuthRepository {
 
       // 1. users 컬렉션에서 사용자 문서 삭제
       await _firebaseService.deleteDocument('users', userId);
+      print('1번 완료');
 
       // 2. 문의 내역 익명화 처리
       await _anonymizeInquiries(userId);
+      print('2번 완료');
 
-      // 3. 포인트 트랜잭션 데이터 익명화
-      await _anonymizePointTransactions(userId);
-
-      // 4. 문제 풀이 데이터 익명화
-      await _anonymizeProblemData(userId);
-
-      // 5. Firebase Authentication 계정 삭제
+      // 3. Firebase Authentication 계정 삭제
       await user.delete();
+      print('3번 완료');
+
+      await FirebaseAuth.instance.signOut();
     } catch (e) {
       // 재인증이 필요한 경우 확인
       if (e is FirebaseAuthException && e.code == 'requires-recent-login') {
