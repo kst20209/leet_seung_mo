@@ -119,48 +119,23 @@ class _MyPageState extends State<MyPage> {
       final appAuthProvider = context.read<AppAuthProvider>();
       await appAuthProvider.deleteAccount();
 
-      print('ㅁㅁㅁ 계정 삭제 완료');
-
       // 저장해둔 컨텍스트 사용
       navigatorContext.pop();
 
       // 새로운 컨텍스트에서 다이얼로그 표시 시도
       navigatorContext.pushNamedAndRemoveUntil('/', (route) => false);
     } catch (e) {
-      print('ㅁㅁㅁ 계정 삭제 오류: $e');
-
-      // 오류 발생 시 처리
-      if (mounted) {
-        // 로딩 다이얼로그 닫기 시도
-        try {
-          Navigator.of(context).pop();
-        } catch (navError) {
-          print('ㅁㅁㅁ Navigator 오류(오류 경로): $navError');
-        }
-
-        // 오류 다이얼로그 표시
-        if (mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: Text('계정 삭제 실패'),
-                  content: Text('계정 삭제 중 오류가 발생했습니다:\n$e'),
-                  actions: [
-                    TextButton(
-                      child: Text('확인'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ],
-                );
-              },
-            );
-          });
-        }
+      // 로딩 다이얼로그 닫기 시도
+      try {
+        navigatorContext.pop();
+      } catch (navError) {
+        print('ㅁㅁㅁ Navigator 오류(오류 경로): $navError');
       }
+
+      // 에러 메시지는 SnackBar로 표시 (다이얼로그 대신)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다. 고객센터로 문의해주십시오.')),
+      );
     }
   }
 

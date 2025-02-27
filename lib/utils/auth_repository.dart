@@ -62,15 +62,12 @@ class AuthRepository {
 
       // 1. users 컬렉션에서 사용자 문서 삭제
       await _firebaseService.deleteDocument('users', userId);
-      print('1번 완료');
 
       // 2. 문의 내역 익명화 처리
       await _anonymizeInquiries(userId);
-      print('2번 완료');
 
       // 3. Firebase Authentication 계정 삭제
       await user.delete();
-      print('3번 완료');
 
       await FirebaseAuth.instance.signOut();
     } catch (e) {
@@ -100,61 +97,6 @@ class AuthRepository {
     }
 
     if (querySnapshot.docs.isNotEmpty) {
-      await batch.commit();
-    }
-  }
-
-// 포인트 트랜잭션 데이터 익명화
-  Future<void> _anonymizePointTransactions(String userId) async {
-    final querySnapshot = await _firestore
-        .collection('pointTransactions')
-        .where('userId', isEqualTo: userId)
-        .get();
-
-    final batch = _firestore.batch();
-
-    for (var doc in querySnapshot.docs) {
-      batch.update(doc.reference, {
-        'userId': 'deleted_user',
-        'isAnonymized': true,
-      });
-    }
-
-    if (querySnapshot.docs.isNotEmpty) {
-      await batch.commit();
-    }
-  }
-
-// 문제 풀이 데이터 익명화 (userProblemData 컬렉션)
-  Future<void> _anonymizeProblemData(String userId) async {
-    final querySnapshot = await _firestore
-        .collection('userProblemData')
-        .where('userId', isEqualTo: userId)
-        .get();
-
-    final batch = _firestore.batch();
-
-    for (var doc in querySnapshot.docs) {
-      batch.update(doc.reference, {
-        'userId': 'deleted_user',
-        'isAnonymized': true,
-      });
-    }
-
-    // drawingAttempts 컬렉션 익명화
-    final attemptsSnapshot = await _firestore
-        .collection('drawingAttempts')
-        .where('userId', isEqualTo: userId)
-        .get();
-
-    for (var doc in attemptsSnapshot.docs) {
-      batch.update(doc.reference, {
-        'userId': 'deleted_user',
-        'isAnonymized': true,
-      });
-    }
-
-    if (querySnapshot.docs.isNotEmpty || attemptsSnapshot.docs.isNotEmpty) {
       await batch.commit();
     }
   }
