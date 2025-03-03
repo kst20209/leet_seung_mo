@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/screens/login_screen.dart';
 import 'package:leet_seung_mo/screens/signup/signup_screen.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
+import 'package:provider/provider.dart';
+
+import '../main.dart';
+import '../providers/auth_provider.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({Key? key}) : super(key: key);
@@ -102,6 +106,39 @@ class LandingScreen extends StatelessWidget {
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          // 게스트 모드로 진입
+                          context.read<AppAuthProvider>().enterGuestMode();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MainScreen()),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Colors.grey,
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          '게스트로 시작하기',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
                           ),
                         ),
                       ),

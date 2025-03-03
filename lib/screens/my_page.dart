@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/screens/login_screen.dart';
+import 'package:leet_seung_mo/screens/signup/signup_screen.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -205,19 +207,23 @@ class _MyPageState extends State<MyPage> {
   Widget _buildPointCard(BuildContext context) {
     return Consumer<UserDataProvider>(
       builder: (context, userDataProvider, _) {
+        final authProvider = context.read<AppAuthProvider>();
+        final isGuest = authProvider.isGuest;
         return ResponsiveContainer(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Card(
               child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PurchasePointPage(),
-                    ),
-                  );
-                },
+                onTap: isGuest
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PurchasePointPage(),
+                          ),
+                        );
+                      },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -245,15 +251,23 @@ class _MyPageState extends State<MyPage> {
                       ),
                       const Spacer(),
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PurchasePointPage(),
-                            ),
-                          );
-                        },
-                        child: const Text('충전하기'),
+                        onPressed: isGuest
+                            ? null
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const PurchasePointPage(),
+                                  ),
+                                );
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isGuest
+                              ? Colors.grey
+                              : Theme.of(context).primaryColor,
+                        ),
+                        child: Text(isGuest ? '로그인 필요' : '충전하기'),
                       ),
                     ],
                   ),
@@ -317,86 +331,145 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildSettingsList(BuildContext context) {
+    final authProvider = context.read<AppAuthProvider>();
+    final isGuest = authProvider.isGuest;
     final user = context.read<AppAuthProvider>().user;
-    final bool hasPhoneNumber =
-        user?.phoneNumber != null && user!.phoneNumber!.isNotEmpty;
+    final hasPhoneNumber =
+        !isGuest && user?.phoneNumber != null && user!.phoneNumber!.isNotEmpty;
 
-    List<Map<String, dynamic>> settings = [
-      {
-        'title': '포인트 사용내역',
-        'icon': Icons.history,
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PointTransactionHistoryPage(),
-            ),
-          );
+    List<Map<String, dynamic>> settings = [];
+
+    // 게스트 모드일 때와 로그인한 사용자일 때 서로 다른 설정 항목 표시
+    if (isGuest) {
+      // 게스트 모드인 경우의 설정 항목
+      settings = [
+        {
+          'title': '로그인하기',
+          'icon': Icons.login,
+          'onTap': () {
+            authProvider.exitGuestMode();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => LoginScreen()),
+            );
+          },
         },
-      },
-      {
-        'title': hasPhoneNumber ? '전화번호 수정' : '휴대전화 추가',
-        'icon': Icons.phone,
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => hasPhoneNumber
-                  ? const ChangePhoneScreen()
-                  : const AddPhoneScreen(),
-            ),
-          );
+        {
+          'title': '회원가입하기',
+          'icon': Icons.person_add,
+          'onTap': () {
+            authProvider.exitGuestMode();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => SignUpScreen()),
+            );
+          },
         },
-      },
-      {
-        'title': '문의하기',
-        'icon': Icons.help,
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const InquiryPage(),
-            ),
-          );
+        {
+          'title': '개인정보처리방침',
+          'icon': Icons.security,
+          'onTap': () {
+            UrlService.launchURL(UrlService.privacyPolicyUrl);
+          },
         },
-      },
-      {
-        'title': '개인정보처리방침',
-        'icon': Icons.security,
-        'onTap': () {
-          UrlService.launchURL(UrlService.privacyPolicyUrl);
+        {
+          'title': '이용약관',
+          'icon': Icons.description,
+          'onTap': () {
+            UrlService.launchURL(UrlService.policyOfServiceUrl);
+          },
         },
-      },
-      {
-        'title': '이용약관',
-        'icon': Icons.description,
-        'onTap': () {
-          UrlService.launchURL(UrlService.policyOfServiceUrl);
+        {
+          'title': '버전 정보',
+          'icon': Icons.new_releases,
+          'onTap': null,
         },
-      },
-      {
-        'title': '로그아웃',
-        'icon': Icons.logout,
-        'onTap': () => _handleLogout(context),
-      },
-      {
-        'title': '계정 탈퇴',
-        'icon': Icons.delete_forever,
-        'onTap': () => _showDeleteAccountDialog(context),
-      },
-    ];
+      ];
+    } else {
+      // 로그인한 사용자인 경우의 설정 항목
+      settings = [
+        {
+          'title': '포인트 사용내역',
+          'icon': Icons.history,
+          'onTap': () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PointTransactionHistoryPage(),
+              ),
+            );
+          },
+        },
+        {
+          'title': hasPhoneNumber ? '전화번호 수정' : '휴대전화 추가',
+          'icon': Icons.phone,
+          'onTap': () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => hasPhoneNumber
+                    ? const ChangePhoneScreen()
+                    : const AddPhoneScreen(),
+              ),
+            );
+          },
+        },
+        {
+          'title': '문의하기',
+          'icon': Icons.help,
+          'onTap': () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const InquiryPage(),
+              ),
+            );
+          },
+        },
+        {
+          'title': '개인정보처리방침',
+          'icon': Icons.security,
+          'onTap': () {
+            UrlService.launchURL(UrlService.privacyPolicyUrl);
+          },
+        },
+        {
+          'title': '이용약관',
+          'icon': Icons.description,
+          'onTap': () {
+            UrlService.launchURL(UrlService.policyOfServiceUrl);
+          },
+        },
+        {
+          'title': '버전 정보',
+          'icon': Icons.new_releases,
+          'onTap': null,
+        },
+        {
+          'title': '로그아웃',
+          'icon': Icons.logout,
+          'onTap': () => _handleLogout(context),
+        },
+        {
+          'title': '계정 탈퇴',
+          'icon': Icons.delete_forever,
+          'onTap': () => _showDeleteAccountDialog(context),
+        },
+      ];
+    }
 
     return ResponsiveContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('고객 지원',
+          Text(isGuest ? '계정' : '고객 지원',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
           ...settings.map((setting) => ListTile(
                 leading: Icon(setting['icon']),
                 title: Text(setting['title']),
-                trailing: Icon(Icons.chevron_right),
+                trailing:
+                    setting['onTap'] != null ? Icon(Icons.chevron_right) : null,
                 onTap: setting['onTap'],
               )),
         ],

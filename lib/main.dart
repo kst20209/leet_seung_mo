@@ -1,4 +1,3 @@
-// import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -257,6 +256,7 @@ Widget _handleAuthState(BuildContext context) {
         case AuthStatus.uninitialized:
           return const Center(child: CircularProgressIndicator());
         case AuthStatus.authenticated:
+        case AuthStatus.guest:
           return const MainScreen();
         case AuthStatus.unauthenticated:
           return LandingScreen();

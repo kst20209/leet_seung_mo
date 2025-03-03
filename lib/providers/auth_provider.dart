@@ -8,6 +8,7 @@ enum AuthStatus {
   uninitialized,
   authenticated,
   unauthenticated,
+  guest,
 }
 
 class AppAuthProvider with ChangeNotifier {
@@ -39,6 +40,22 @@ class AppAuthProvider with ChangeNotifier {
 
     notifyListeners();
   }
+
+  // 게스트 모드 진입 메서드 추가
+  void enterGuestMode() {
+    _status = AuthStatus.guest;
+    _user = null;
+    _error = null;
+    notifyListeners();
+  }
+
+  // 게스트 모드 종료 메서드 추가
+  void exitGuestMode() {
+    _status = AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+
+  bool get isGuest => _status == AuthStatus.guest;
 
   Future<bool> signInWithEmail(String email, String password) async {
     try {

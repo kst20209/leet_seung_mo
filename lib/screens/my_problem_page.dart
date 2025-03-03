@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:leet_seung_mo/screens/login_screen.dart';
 import 'package:leet_seung_mo/utils/sort_service.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/section_title.dart';
 import '../widgets/horizontal_subject_list.dart';
 import './problem_list_page.dart';
@@ -54,6 +56,57 @@ class _MyProblemPageState extends State<MyProblemPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.read<AppAuthProvider>();
+    final isGuest = authProvider.isGuest;
+
+    // 게스트 모드일 경우 로그인 안내 화면 표시
+    if (isGuest) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('나의 문제'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                size: 80,
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+              ),
+              SizedBox(height: 24),
+              Text(
+                '로그인이 필요합니다',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              SizedBox(height: 16),
+              Text(
+                '나의 문제 기능을 이용하려면\n로그인이 필요합니다.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: () {
+                  // 게스트 모드 종료
+                  context.read<AppAuthProvider>().exitGuestMode();
+                  // 로그인 화면으로 이동
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                ),
+                child: Text('로그인하기'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('나의 문제'),

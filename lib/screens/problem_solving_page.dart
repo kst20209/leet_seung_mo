@@ -787,7 +787,7 @@ class _ProblemSolvingPageState extends State<ProblemSolvingPage> {
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다.')),
+        const SnackBar(content: Text('답 확인을 위해서는 로그인이 필요합니다.')),
       );
       return;
     }

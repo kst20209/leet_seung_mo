@@ -35,7 +35,7 @@ class _ProblemSellDetailState extends State<ProblemSellDetail> {
 
     if (authProvider.user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다.')),
+        const SnackBar(content: Text('구입을 위해서는 로그인이 필요합니다.')),
       );
       return;
     }
@@ -182,6 +182,8 @@ class _ProblemSellDetailState extends State<ProblemSellDetail> {
   }
 
   Widget _buildPurchaseButton(bool isPurchased) {
+    final authProvider = context.read<AppAuthProvider>();
+    final isGuest = authProvider.isGuest;
     if (isPurchased) {
       return ElevatedButton(
         onPressed: null,
@@ -194,6 +196,23 @@ class _ProblemSellDetailState extends State<ProblemSellDetail> {
           '구매완료',
           style: TextStyle(color: Colors.white),
         ),
+      );
+    }
+
+    // 게스트 모드 확인
+    if (isGuest) {
+      return ElevatedButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('구매하려면 로그인이 필요합니다')),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.grey,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          textStyle: const TextStyle(fontSize: 18),
+        ),
+        child: const Text('로그인 필요'),
       );
     }
 

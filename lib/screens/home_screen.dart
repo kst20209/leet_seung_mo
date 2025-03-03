@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/user_data_provider.dart';
 import '../widgets/promo_banner.dart';
 import '../widgets/section_title.dart';
@@ -64,6 +65,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPurchasedProblemSets() {
     return Consumer<UserDataProvider>(
       builder: (context, userDataProvider, _) {
+        final authProvider = context.read<AppAuthProvider>();
+        final isGuest = authProvider.isGuest;
+
+        // 게스트 모드일 경우 빈 화면 반환
+        if (isGuest) {
+          return SizedBox(height: 10); // 아무것도 표시하지 않음
+        }
+
         return _buildDataSection<ProblemSet>(
           title: '나의 문제꾸러미',
           icon: Icons.collections_bookmark,

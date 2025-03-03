@@ -140,7 +140,6 @@ class _AddPhoneScreenState extends State<AddPhoneScreen> {
     });
 
     try {
-      final authProvider = context.read<AppAuthProvider>();
       final credential = PhoneAuthProvider.credential(
         verificationId: _verificationId!,
         smsCode: _verificationController.text,
