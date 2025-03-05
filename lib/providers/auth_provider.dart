@@ -101,6 +101,8 @@ class AppAuthProvider with ChangeNotifier {
           onCodeSent(verificationId);
         },
         codeAutoRetrievalTimeout: (String verificationId) {},
+        timeout: const Duration(seconds: 60),
+        forceResendingToken: null,
       );
     } catch (e) {
       _error = e.toString();

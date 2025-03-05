@@ -1,7 +1,7 @@
 name: leet_seung_mo
 description: "LEET 성적 오름의 지름길"
 publish_to: 'none'
-version: 1.0.0+16
+version: 1.0.0+18
 
 environment:
   sdk: ^3.5.3
