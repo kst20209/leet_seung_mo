@@ -8,6 +8,31 @@ class AuthRepository {
 
   AuthRepository(this._firebaseService);
 
+  Future<UserCredential> signUpWithEmail(String email, String password) async {
+    try {
+      // Firebase Auth를 통한 이메일/비밀번호 회원가입
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 새 사용자의 초기 데이터 생성
+      if (userCredential.user != null) {
+        await _firebaseService.createUserDocument(userCredential.user!.uid, {
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+          'currentPoints': 0,
+          'purchasedProblemSets': []
+        });
+      }
+
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_handleSignUpError(e));
+    }
+  }
+
   Future<UserCredential> signInWithEmail(String email, String password) async {
     try {
       return await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -136,16 +161,16 @@ class AuthRepository {
     }
   }
 
-  // String _handleSignUpError(FirebaseAuthException e) {
-  //   switch (e.code) {
-  //     case 'weak-password':
-  //       return '비밀번호가 너무 약합니다.';
-  //     case 'email-already-in-use':
-  //       return '이미 사용 중인 이메일 주소입니다.';
-  //     case 'invalid-email':
-  //       return '유효하지 않은 이메일 주소입니다.';
-  //     default:
-  //       return '회원가입 중 오류가 발생했습니다: ${e.message}';
-  //   }
-  // }
+  String _handleSignUpError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'weak-password':
+        return '비밀번호가 너무 약합니다.';
+      case 'email-already-in-use':
+        return '이미 사용 중인 이메일 주소입니다.';
+      case 'invalid-email':
+        return '유효하지 않은 이메일 주소입니다.';
+      default:
+        return '회원가입 중 오류가 발생했습니다: ${e.message}';
+    }
+  }
 }

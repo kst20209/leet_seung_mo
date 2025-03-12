@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:leet_seung_mo/main.dart';
-import 'phone_verification_screen.dart';
+import 'package:leet_seung_mo/screens/signup/email_password_screen.dart';
+// import 'phone_verification_screen.dart';
 import 'nickname_screen.dart';
 import 'build_thankyou_page.dart';
 import '../../utils/firebase_service.dart';
@@ -34,7 +35,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           controller: _pageController,
           physics: NeverScrollableScrollPhysics(),
           children: [
-            PhoneVerificationScreen(
+            EmailPasswordScreen(
               onNext: _goToNextPage,
             ),
             NicknameScreen(

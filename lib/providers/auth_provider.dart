@@ -57,6 +57,27 @@ class AppAuthProvider with ChangeNotifier {
 
   bool get isGuest => _status == AuthStatus.guest;
 
+  Future<bool> signUpWithEmail(String email, String password) async {
+    try {
+      final userCredential =
+          await _authRepository.signUpWithEmail(email, password);
+      _user = userCredential.user;
+      _status = AuthStatus.authenticated;
+      _error = null;
+      notifyListeners();
+
+      if (_user != null && _onLoginSuccess != null) {
+        _onLoginSuccess!(_user!);
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> signInWithEmail(String email, String password) async {
     try {
       final userCredential =
@@ -235,5 +256,20 @@ class AppAuthProvider with ChangeNotifier {
       default:
         return '오류가 발생했습니다: ${e.message}';
     }
+  }
+
+  // 이메일 유효성 검사 메서드
+  bool isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
+
+// 아이디 유효성 검사 메서드 (4~12자)
+  bool isValidUsername(String username) {
+    return username.length >= 4 && username.length <= 12;
+  }
+
+// 비밀번호 유효성 검사 메서드 (8자 이상)
+  bool isValidPassword(String password) {
+    return password.length >= 8;
   }
 }

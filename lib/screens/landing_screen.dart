@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:leet_seung_mo/screens/login_screen.dart';
+// import 'package:leet_seung_mo/screens/login_screen.dart';
 import 'package:leet_seung_mo/screens/signup/signup_screen.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 
 import '../main.dart';
 import '../providers/auth_provider.dart';
+import 'signup/login_with_email_screen.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({Key? key}) : super(key: key);
@@ -60,7 +61,7 @@ class LandingScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => LoginScreen()),
+                                builder: (context) => LoginWithEmailScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -71,7 +72,7 @@ class LandingScreen extends StatelessWidget {
                           elevation: 2,
                         ),
                         child: const Text(
-                          '휴대폰 번호로 로그인하기',
+                          '이메일로 로그인하기',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -101,7 +102,7 @@ class LandingScreen extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          '휴대폰 번호로 회원가입하기',
+                          '이메일로 회원가입하기',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
