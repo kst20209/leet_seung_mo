@@ -441,11 +441,6 @@ class _MyPageState extends State<MyPage> {
           },
         },
         {
-          'title': '버전 정보',
-          'icon': Icons.new_releases,
-          'onTap': null,
-        },
-        {
           'title': '로그아웃',
           'icon': Icons.logout,
           'onTap': () => _handleLogout(context),
