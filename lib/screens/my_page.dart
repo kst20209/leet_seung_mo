@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:leet_seung_mo/screens/login_screen.dart';
 import 'package:leet_seung_mo/screens/signup/signup_screen.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import './mypage/change_phone_screen.dart';
-import 'mypage/add_phone_screen.dart';
+import 'landing_screen.dart';
 import 'mypage/inquiry_page.dart';
 import 'mypage/point_transaction_history_page.dart';
 import './mypage/delete_account_verification_screen.dart';
@@ -333,9 +331,9 @@ class _MyPageState extends State<MyPage> {
   Widget _buildSettingsList(BuildContext context) {
     final authProvider = context.read<AppAuthProvider>();
     final isGuest = authProvider.isGuest;
-    final user = context.read<AppAuthProvider>().user;
-    final hasPhoneNumber =
-        !isGuest && user?.phoneNumber != null && user!.phoneNumber!.isNotEmpty;
+    // final user = context.read<AppAuthProvider>().user;
+    // final hasPhoneNumber =
+    //     !isGuest && user?.phoneNumber != null && user!.phoneNumber!.isNotEmpty;
 
     List<Map<String, dynamic>> settings = [];
 
@@ -350,7 +348,7 @@ class _MyPageState extends State<MyPage> {
             authProvider.exitGuestMode();
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => LoginScreen()),
+              MaterialPageRoute(builder: (context) => LandingScreen()),
             );
           },
         },
@@ -400,20 +398,20 @@ class _MyPageState extends State<MyPage> {
             );
           },
         },
-        {
-          'title': hasPhoneNumber ? '전화번호 수정' : '휴대전화 추가',
-          'icon': Icons.phone,
-          'onTap': () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => hasPhoneNumber
-                    ? const ChangePhoneScreen()
-                    : const AddPhoneScreen(),
-              ),
-            );
-          },
-        },
+        // {
+        //   'title': hasPhoneNumber ? '전화번호 수정' : '휴대전화 추가',
+        //   'icon': Icons.phone,
+        //   'onTap': () {
+        //     Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //         builder: (context) => hasPhoneNumber
+        //             ? const ChangePhoneScreen()
+        //             : const AddPhoneScreen(),
+        //       ),
+        //     );
+        //   },
+        // },
         {
           'title': '문의하기',
           'icon': Icons.help,

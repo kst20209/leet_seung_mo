@@ -40,7 +40,23 @@ class AuthRepository {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      throw Exception('${e.message}');
+      throw Exception(_handleSignInError(e));
+    }
+  }
+
+  // 로그인 에러 처리를 위한 메서드 추가
+  String _handleSignInError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-credential':
+        return '이메일이 존재하지 않거나, 비밀번호가 틀렸렸습니다.';
+      case 'too-many-requests':
+        return '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해 주세요.';
+      case 'invalid-email':
+        return '유효하지 않은 이메일 주소입니다.';
+      case 'network-request-failed':
+        return '네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인해 주세요.';
+      default:
+        return '로그인 중 오류가 발생했습니다: ${e.code}, ${e.message}';
     }
   }
 
