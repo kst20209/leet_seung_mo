@@ -109,3 +109,4 @@ android/app/google-services.json
 # VSCode related
 .vscode/
 *.code-workspace
+/functions
