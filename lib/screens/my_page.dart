@@ -4,6 +4,7 @@ import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'landing_screen.dart';
+import 'mypage/change_password_screen.dart';
 import 'mypage/inquiry_page.dart';
 import 'mypage/point_transaction_history_page.dart';
 import './mypage/delete_account_verification_screen.dart';
@@ -386,6 +387,18 @@ class _MyPageState extends State<MyPage> {
     } else {
       // 로그인한 사용자인 경우의 설정 항목
       settings = [
+        {
+          'title': '비밀번호 변경',
+          'icon': Icons.lock_outline,
+          'onTap': () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ChangePasswordScreen(),
+              ),
+            );
+          },
+        },
         {
           'title': '포인트 사용내역',
           'icon': Icons.history,
