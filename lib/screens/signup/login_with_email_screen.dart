@@ -4,6 +4,7 @@ import 'package:leet_seung_mo/main.dart';
 import 'package:leet_seung_mo/utils/responsive_container.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import 'forgot_password_screen.dart';
 
 class LoginWithEmailScreen extends StatefulWidget {
   @override
@@ -193,6 +194,23 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                  ),
+                  SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordScreen()),
+                      );
+                    },
+                    child: Text(
+                      '비밀번호를 잊으셨나요?',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ],
               ),
